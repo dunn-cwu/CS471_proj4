@@ -1,7 +1,9 @@
 # ====== cmake files ======
 # https://github.com/github/gitignore/blob/master/CMake.gitignore
 
-build/
+build/debug
+build/release
+!CMakeLists.txt
 CMakeLists.txt.user
 CMakeCache.txt
 CMakeFiles/
