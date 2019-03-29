@@ -16,6 +16,14 @@ namespace mfunc
     double ackleysOne(double* v, size_t n);
     double ackleysTwo(double* v, size_t n);
     double eggHolder(double* v, size_t n);
+    double rana(double* v, size_t n);
+    double pathological(double* v, size_t n);
+    double michalewicz(double* v, size_t n);
+    double mastersCosineWave(double* v, size_t n);
+    double quartic(double* v, size_t n);
+    double levy(double* v, size_t n);
+    double step(double* v, size_t n);
+    double alpine(double* v, size_t n);
 }
 
 #endif
