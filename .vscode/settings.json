@@ -25,5 +25,21 @@
         "type_traits": "cpp",
         "typeinfo": "cpp",
         "cstddef": "cpp"
-    }
+    },
+    "cSpell.words": [
+        "ackleys",
+        "ackley’s",
+        "dejong",
+        "desc",
+        "griewangk",
+        "mfunc",
+        "michalewicz",
+        "one",
+        "rana",
+        "rastrigin",
+        "rosenbrock",
+        "rosenbrok",
+        "schwefel",
+        "schwefel’s"
+    ]
 }
