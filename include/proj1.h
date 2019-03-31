@@ -1,10 +1,12 @@
 #ifndef __PROJ1_H
 #define __PROJ1_H
 
+#include <string>
 #include <random>
 #include <chrono>
 #include <vector>
 #include "mfunc.h"
+#include "inireader.h"
 
 namespace proj1
 {
@@ -17,13 +19,16 @@ namespace proj1
     class mfuncExperiment
     {
     public:
-        mfuncExperiment(size_t dimensions, size_t solutions);
+        mfuncExperiment();
         ~mfuncExperiment();
-        int runAllFunc(const char* dataResultsFile);
+        bool init(const char* paramFile);
+        int runAllFunc();
         int runFunc(unsigned int funcId, std::vector<double>& resultArrOut, double& timeOut);
     private:
-        const size_t nbrDim;
-        const size_t nbrSol;
+        util::IniReader iniParams;
+        std::string resultsFile;
+        size_t nbrDim;
+        size_t nbrSol;
         double** vMatrix;
         RandomBounds* vBounds;
 
@@ -32,8 +37,13 @@ namespace proj1
 
         bool genFuncVectors(unsigned int funcId);
 
+        bool parseFuncBounds();
+
         bool allocateVMatrix();
         void releaseVMatrix();
+
+        bool allocateVBounds();
+        void releaseVBounds();
     };
 } // proj1
 
