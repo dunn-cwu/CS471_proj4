@@ -1,9 +1,22 @@
+/**
+ * @file mfunc.h
+ * @author Andrew Dunn (Andrew.Dunn@cwu.edu)
+ * @brief Contains various math function definitions
+ * @version 0.1
+ * @date 2019-03-29
+ * 
+ * @copyright Copyright (c) 2019
+ * 
+ */
+
 #ifndef __MFUNC_H
 #define __MFUNC_H
 
-
 #include <cstddef> // size_t definition
 
+/**
+ * Scope for all math functions
+ */
 namespace mfunc
 {
     extern const unsigned int NUM_FUNCTIONS;

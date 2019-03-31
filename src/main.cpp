@@ -1,12 +1,13 @@
 #include <iostream>
-#include "mfunc.h"
+#include "proj1.h"
 
 int main(int argc, char *argv[]) {
-   double testV[5] = { 5.4, 67.2, 26.2, -123.6, 400.3 };
+   std::vector<double> resultsV;
+   double time;
 
-   double result = mfunc::schwefel(testV, 5);
-
-   std::cout << result << std::endl;
+   proj1::mfuncExperiment ex(10, 30);
+   ex.runFunc(1, resultsV, time);
+   std::cout << time << std::endl;
 
    return 0;
 }

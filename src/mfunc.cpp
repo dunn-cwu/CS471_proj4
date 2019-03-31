@@ -1,3 +1,13 @@
+/**
+ * @file mfunc.cpp
+ * @author Andrew Dunn (Andrew.Dunn@cwu.edu)
+ * @brief Implementations for various math functions defined in mfunc.h
+ * @version 0.1
+ * @date 2019-03-29
+ * 
+ * @copyright Copyright (c) 2019
+ */
+
 #define _USE_MATH_DEFINES
 
 #include "mfunc.h"
@@ -50,7 +60,7 @@ const char* mfunc::schwefelDesc()
 }
 
 /**
- * @brief Function 1
+ * @brief Function 1.
  * Implementation of Schwefel’s mathematical function
  * @param v Vector as a double array
  * @param n Size of the vector 'v'
@@ -80,7 +90,7 @@ const char* mfunc::dejongDesc()
 }
 
 /**
- * @brief Function 2
+ * @brief Function 2.
  * Implementation of 1st De Jong’s mathematical function
  * @param v Vector as a double array
  * @param n Size of the vector 'v'
@@ -110,7 +120,7 @@ const char* mfunc::rosenbrokDesc()
 }
 
 /**
- * @brief Function 3
+ * @brief Function 3.
  * Implementation of the Rosenbrock mathematical function
  * @param v Vector as a double array
  * @param n Size of the vector 'v'
@@ -143,7 +153,7 @@ const char* mfunc::rastriginDesc()
 }
 
 /**
- * @brief Function 4
+ * @brief Function 4.
  * Implementation of the Rastrigin mathematical function
  * @param v Vector as a double array
  * @param n Size of the vector 'v'
@@ -173,7 +183,7 @@ const char* mfunc::griewangkDesc()
 }
 
 /**
- * @brief Function 5
+ * @brief Function 5.
  * Implementation of the Griewangk mathematical function
  * @param v Vector as a double array
  * @param n Size of the vector 'v'
@@ -209,7 +219,7 @@ const char* mfunc::sineEnvelopeSineWaveDesc()
 }
 
 /**
- * @brief Function 6
+ * @brief Function 6.
  * Implementation of the Sine Envelope Sine Wave mathematical function
  * @param v Vector as a double array
  * @param n Size of the vector 'v'
@@ -243,7 +253,7 @@ const char* mfunc::stretchedVSineWaveDesc()
 }
 
 /**
- * @brief Function 7
+ * @brief Function 7.
  * Implementation of the Stretched V Sine Wave mathematical function
  * @param v Vector as a double array
  * @param n Size of the vector 'v'
@@ -276,7 +286,7 @@ const char* mfunc::ackleysOneDesc()
 }
 
 /**
- * @brief Function 8
+ * @brief Function 8.
  * Implementation of Ackley’s One mathematical function
  * @param v Vector as a double array
  * @param n Size of the vector 'v'
@@ -308,7 +318,7 @@ const char* mfunc::ackleysTwoDesc()
 }
 
 /**
- * @brief Function 9
+ * @brief Function 9.
  * Implementation of Ackley’s Two mathematical function
  * @param v Vector as a double array
  * @param n Size of the vector 'v'
@@ -340,7 +350,7 @@ const char* mfunc::eggHolderDesc()
 }
 
 /**
- * @brief Function 10
+ * @brief Function 10.
  * Implementation of the Egg Holder mathematical function
  * @param v Vector as a double array
  * @param n Size of the vector 'v'
@@ -372,7 +382,7 @@ const char* mfunc::ranaDesc()
 }
 
 /**
- * @brief Function 11
+ * @brief Function 11.
  * Implementation of the Rana mathematical function
  * @param v Vector as a double array
  * @param n Size of the vector 'v'
@@ -404,7 +414,7 @@ const char* mfunc::pathologicalDesc()
 }
 
 /**
- * @brief Function 12
+ * @brief Function 12.
  * Implementation of the Pathological mathematical function
  * @param v Vector as a double array
  * @param n Size of the vector 'v'
@@ -438,7 +448,7 @@ const char* mfunc::michalewiczDesc()
 }
 
 /**
- * @brief Function 13
+ * @brief Function 13.
  * Implementation of the Michalewicz mathematical function
  * @param v Vector as a double array
  * @param n Size of the vector 'v'
@@ -468,7 +478,7 @@ const char* mfunc::mastersCosineWaveDesc()
 }
 
 /**
- * @brief Function 14
+ * @brief Function 14.
  * Implementation of the Masters Cosine Wave mathematical function
  * @param v Vector as a double array
  * @param n Size of the vector 'v'
@@ -500,7 +510,7 @@ const char* mfunc::quarticDesc()
 }
 
 /**
- * @brief Function 15
+ * @brief Function 15.
  * Implementation of the Quartic mathematical function
  * @param v Vector as a double array
  * @param n Size of the vector 'v'
@@ -520,7 +530,9 @@ double mfunc::quartic(double* v, size_t n)
 
 // ================================================
 
-// Helper function for mfunc::levy()
+/**
+ * Helper math function used in levy()
+ */
 inline double w(double x)
 {
     return 1.0 + (x - 1.0) / 4.0;
@@ -536,7 +548,7 @@ const char* mfunc::levyDesc()
 }
 
 /**
- * @brief Function 16
+ * @brief Function 16.
  * Implementation of the Levy mathematical function
  * @param v Vector as a double array
  * @param n Size of the vector 'v'
@@ -575,7 +587,7 @@ const char* mfunc::stepDesc()
 }
 
 /**
- * @brief Function 17
+ * @brief Function 17.
  * Implementation of the Step mathematical function
  * @param v Vector as a double array
  * @param n Size of the vector 'v'
@@ -606,7 +618,7 @@ const char* mfunc::alpineDesc()
 }
 
 /**
- * @brief Function 18
+ * @brief Function 18.
  * Implementation of the Alpine mathematical function
  * @param v Vector as a double array
  * @param n Size of the vector 'v'
