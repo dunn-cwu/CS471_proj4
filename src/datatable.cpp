@@ -1,4 +1,6 @@
 #include "datatable.h"
+#include <iostream>
+#include <fstream>
 
 using namespace mdata;
 
@@ -85,5 +87,57 @@ void DataTable::setEntry(unsigned int row, unsigned int col, std::string val)
     if (row >= rows || col >= cols) throw "Invalid row/column";
 
     tableData[row][col] = val;
+}
+
+void DataTable::setEntry(unsigned int row, unsigned int col, int val)
+{
+    setEntry(row, col, std::to_string(val));
+}
+
+void DataTable::setEntry(unsigned int row, unsigned int col, long val)
+{
+    setEntry(row, col, std::to_string(val));
+}
+
+void DataTable::setEntry(unsigned int row, unsigned int col, float val)
+{
+    setEntry(row, col, std::to_string(val));
+}
+
+void DataTable::setEntry(unsigned int row, unsigned int col, double val)
+{
+    setEntry(row, col, std::to_string(val));
+}
+
+bool DataTable::exportCSV(const char* filePath)
+{
+    using namespace std;
+
+    ofstream outFile;
+    outFile.open(filePath, ofstream::out | ofstream::trunc);
+    if (!outFile.good()) return false;
+
+    // Print column labels
+    for (unsigned int c = 0; c < cols; c++)
+    {
+        outFile << colLabels[c];
+        if (c < cols - 1) outFile << ",";
+    }
+
+    outFile << endl;
+
+    // Print data rows
+    for (unsigned int r = 0; r < rows; r++)
+    {
+        for (unsigned int c = 0; c < cols; c++)
+        {
+            outFile << tableData[r][c];
+            if (c < cols - 1) outFile << ",";
+        }
+        outFile << endl;
+    }
+
+    outFile.close();
+    return true;
 }
 

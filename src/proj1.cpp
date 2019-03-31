@@ -1,5 +1,7 @@
 #include "proj1.h"
 #include "datatable.h"
+#include "datastats.h"
+#include <iostream>
 
 using namespace std;
 using namespace std::chrono;
@@ -35,7 +37,19 @@ int mfuncExperiment::runAllFunc(const char* dataResultsFile)
         int err = runFunc(f, fResults, fTime);
         if (err)
             return err;
+        else
+        {
+            unsigned int rowIndex = resultsTable.addRow();
+            resultsTable.setEntry(rowIndex, 0, mfunc::fDesc(f));
+            resultsTable.setEntry(rowIndex, 1, mdata::average(fResults));
+            resultsTable.setEntry(rowIndex, 2, mdata::standardDeviation(fResults));
+            resultsTable.setEntry(rowIndex, 3, mdata::range(fResults));
+            resultsTable.setEntry(rowIndex, 4, mdata::median(fResults));
+            resultsTable.setEntry(rowIndex, 5, fTime);
+        }
     }
+
+    resultsTable.exportCSV(dataResultsFile);
 
     return 0;
 }
@@ -72,7 +86,7 @@ bool mfuncExperiment::genFuncVectors(unsigned int funcId)
     // Generate new seed for mersenne twister engine
     rgen = std::mt19937(rdev());
 
-    std::uniform_real_distribution<> dist(1.0, 2.0);
+    std::uniform_real_distribution<> dist(0, M_PI);
 
     for (size_t s = 0; s < nbrSol; s++)
     {
@@ -113,11 +127,11 @@ void mfuncExperiment::releaseVMatrix()
     {
         if (vMatrix[i] != NULL)
         {
-            delete(vMatrix[i]);
+            delete vMatrix[i];
             vMatrix[i] = nullptr;
         }
     }
 
-    delete(vMatrix);
+    delete vMatrix;
     vMatrix = nullptr;
 }

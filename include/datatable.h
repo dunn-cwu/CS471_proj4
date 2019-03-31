@@ -22,6 +22,12 @@ namespace mdata
 
         std::string getEntry(unsigned int row, unsigned int col);
         void setEntry(unsigned int row, unsigned int col, std::string val);
+        void setEntry(unsigned int row, unsigned int col, int val);
+        void setEntry(unsigned int row, unsigned int col, long val);
+        void setEntry(unsigned int row, unsigned int col, float val);
+        void setEntry(unsigned int row, unsigned int col, double val);
+
+        bool exportCSV(const char* filePath);
     protected:
         unsigned int cols;
         unsigned int rows;

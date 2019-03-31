@@ -70,7 +70,7 @@ double mfunc::schwefel(double* v, size_t n)
 {
     double f = 0.0;
 
-    for (size_t i = 0; i < n; ++i)
+    for (size_t i = 0; i < n; i++)
     {
         f += (-1.0 * v[i]) * sin(sqrt(fabs(v[i])));
     }
@@ -100,7 +100,7 @@ double mfunc::dejong(double* v, size_t n)
 {
     double f = 0.0;
 
-    for (size_t i = 0; i < n; ++i)
+    for (size_t i = 0; i < n; i++)
     {
         f += v[i] * v[i];
     }
@@ -130,7 +130,7 @@ double mfunc::rosenbrok(double* v, size_t n)
 {
     double f = 0.0;
 
-    for (size_t i = 0; i < n - 1; ++i)
+    for (size_t i = 0; i < n - 1; i++)
     {
         double a = ((v[i] * v[i]) - v[i+1]);
         double b = (1.0 - v[i]);
@@ -163,7 +163,7 @@ double mfunc::rastrigin(double* v, size_t n)
 {
     double f = 0.0;
 
-    for (size_t i = 0; i < n; ++i)
+    for (size_t i = 0; i < n; i++)
     {
         f += (v[i] * v[i]) - (10.0 * cos(2.0 * M_PI * v[i]));
     }
@@ -194,12 +194,12 @@ double mfunc::griewangk(double* v, size_t n)
     double sum = 0.0;
     double product = 0.0;
 
-    for (size_t i = 0; i < n; ++i)
+    for (size_t i = 0; i < n; i++)
     {
         sum += (v[i] * v[i]) / 4000.0;
     }
 
-    for (size_t i = 0; i < n; ++i)
+    for (size_t i = 0; i < n; i++)
     {
         product *= cos(v[i] / sqrt(i + 1.0));
     }
@@ -229,7 +229,7 @@ double mfunc::sineEnvelopeSineWave(double* v, size_t n)
 {
     double f = 0.0;
 
-    for (size_t i = 0; i < n - 1; ++i)
+    for (size_t i = 0; i < n - 1; i++)
     {
         double a = sin(v[i]*v[i] + v[i+1]*v[i+1] - 0.5);
         a *= a;
@@ -263,7 +263,7 @@ double mfunc::stretchedVSineWave(double* v, size_t n)
 {
     double f = 0.0;
 
-    for (size_t i = 0; i < n - 1; ++i)
+    for (size_t i = 0; i < n - 1; i++)
     {
         double a = nthroot(v[i]*v[i] + v[i+1]*v[i+1], 4.0);
         double b = sin(50.0 * nthroot(v[i]*v[i] + v[i+1]*v[i+1], 10.0));
@@ -296,7 +296,7 @@ double mfunc::ackleysOne(double* v, size_t n)
 {
     double f = 0.0;
 
-    for (size_t i = 0; i < n - 1; ++i)
+    for (size_t i = 0; i < n - 1; i++)
     {
         double a = (1.0 / pow(M_E, 0.2)) * sqrt(v[i]*v[i] + v[i+1]*v[i+1]);
         double b = 3.0 * (cos(2.0*v[i]) + sin(2.0*v[i+1]));
@@ -328,7 +328,7 @@ double mfunc::ackleysTwo(double* v, size_t n)
 {
     double f = 0.0;
 
-    for (size_t i = 0; i < n - 1; ++i)
+    for (size_t i = 0; i < n - 1; i++)
     {
         double a = 20.0 / pow(M_E, 0.2 * sqrt((v[i]*v[i] + v[i+1]*v[i+1]) / 2.0));
         double b = pow(M_E, 0.5 * (cos(2.0 * M_PI * v[i]) + cos(2.0 * M_PI * v[i+1])));
@@ -360,7 +360,7 @@ double mfunc::eggHolder(double* v, size_t n)
 {
     double f = 0.0;
 
-    for (size_t i = 0; i < n - 1; ++i)
+    for (size_t i = 0; i < n - 1; i++)
     {
         double a = -1.0 * v[i] * sin(sqrt(fabs(v[i] - v[i+1] - 47.0)));
         double b = (v[i+1] + 47) * sin(sqrt(fabs(v[i+1] + 47.0 + (v[i]/2.0))));
@@ -392,7 +392,7 @@ double mfunc::rana(double* v, size_t n)
 {
     double f = 0.0;
 
-    for (size_t i = 0; i < n - 1; ++i)
+    for (size_t i = 0; i < n - 1; i++)
     {
         double a = v[i] * sin(sqrt(fabs(v[i+1] - v[i] + 1.0))) * cos(sqrt(fabs(v[i+1] + v[i] + 1.0)));
         double b = (v[i+1] + 1.0) * cos(sqrt(fabs(v[i+1] - v[i] + 1.0))) * sin(sqrt(fabs(v[i+1] + v[i] + 1.0)));
@@ -424,7 +424,7 @@ double mfunc::pathological(double* v, size_t n)
 {
     double f = 0.0;
 
-    for (size_t i = 0; i < n - 1; ++i)
+    for (size_t i = 0; i < n - 1; i++)
     {
         double a = sin(sqrt(100.0*v[i]*v[i] + v[i+1]*v[i+1]));
         a = (a*a) - 0.5;
@@ -458,7 +458,7 @@ double mfunc::michalewicz(double* v, size_t n)
 {
     double f = 0.0;
 
-    for (size_t i = 0; i < n; ++i)
+    for (size_t i = 0; i < n; i++)
     {
         f += sin(v[i]) * pow(sin(((i+1) * v[i] * v[i]) / M_PI), 20);
     }
@@ -488,7 +488,7 @@ double mfunc::mastersCosineWave(double* v, size_t n)
 {
     double f = 0.0;
 
-    for (size_t i = 0; i < n - 1; ++i)
+    for (size_t i = 0; i < n - 1; i++)
     {
         double a = pow(M_E, (-1.0/8.0)*(v[i]*v[i] + v[i+1]*v[i+1] + 0.5*v[i+1]*v[i]));
         double b = cos(4 * sqrt(v[i]*v[i] + v[i+1]*v[i+1] + 0.5*v[i]*v[i+1]));
@@ -520,7 +520,7 @@ double mfunc::quartic(double* v, size_t n)
 {
     double f = 0.0;
 
-    for (size_t i = 0; i < n; ++i)
+    for (size_t i = 0; i < n; i++)
     {
         f += (i+1) * v[i] * v[i] * v[i] * v[i];
     }
@@ -558,7 +558,7 @@ double mfunc::levy(double* v, size_t n)
 {
     double f = 0.0;
 
-    for (size_t i = 0; i < n - 1; ++i)
+    for (size_t i = 0; i < n - 1; i++)
     {
         double a = w(v[i]) - 1.0;
         a *= a;
@@ -597,7 +597,7 @@ double mfunc::step(double* v, size_t n)
 {
     double f = 0.0;
 
-    for (size_t i = 0; i < n; ++i)
+    for (size_t i = 0; i < n; i++)
     {
         double a = fabs(v[i]) + 0.5;
         f += a * a;
@@ -628,7 +628,7 @@ double mfunc::alpine(double* v, size_t n)
 {
     double f = 0.0;
 
-    for (size_t i = 0; i < n; ++i)
+    for (size_t i = 0; i < n; i++)
     {
         f += fabs(v[i] * sin(v[i]) + 0.1*v[i]);
     }
