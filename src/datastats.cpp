@@ -1,6 +1,5 @@
 #include "datastats.h"
 #include <cmath>
-#include <bits/stdc++.h>
 
 double mdata::average(const std::vector<double>& v)
 {
@@ -70,6 +69,6 @@ double mdata::median(const std::vector<double>& v)
         retVal = (high + low) / 2;
     }
 
-    delete vSorted;
+    delete[] vSorted;
     return retVal;
 }

@@ -262,12 +262,12 @@ void mfuncExperiment::releaseVMatrix()
     {
         if (vMatrix[i] != NULL)
         {
-            delete vMatrix[i];
+            delete[] vMatrix[i];
             vMatrix[i] = nullptr;
         }
     }
 
-    delete vMatrix;
+    delete[] vMatrix;
     vMatrix = nullptr;
 }
 
@@ -293,6 +293,6 @@ void mfuncExperiment::releaseVBounds()
 {
     if (vBounds == nullptr) return;
 
-    delete vBounds;
+    delete[] vBounds;
     vBounds = nullptr;
 }
