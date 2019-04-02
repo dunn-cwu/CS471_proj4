@@ -224,9 +224,8 @@ void DataTable::setEntry(unsigned int row, unsigned int col, double val)
  * @brief Exports the current data table to the given file path
  * in the *.csv format. If the file already exists, it is replaced.
  * 
- * @param filePath 
- * @return true 
- * @return false 
+ * @param filePath File path to be exported to
+ * @return Returns true if the file was succesfully exported. Otherwise false.
  */
 bool DataTable::exportCSV(const char* filePath)
 {
