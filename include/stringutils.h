@@ -1,3 +1,10 @@
+/**
+ * @file stringutils.h
+ * @author Evan Teran (https://github.com/eteran)
+ * @brief Contains various string manipulation helper functions
+ * @date 2019-04-01
+ * 
+ */
 #ifndef __STRINGUTILS_H
 #define __STRINGUTILS_H
 
@@ -51,3 +58,7 @@ namespace util
     }
 }
 #endif
+
+// =========================
+// End of stringutils.h
+// =========================

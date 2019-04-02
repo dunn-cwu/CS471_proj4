@@ -429,7 +429,7 @@ double mfunc::pathological(double* v, size_t n)
         double a = sin(sqrt(100.0*v[i]*v[i] + v[i+1]*v[i+1]));
         a = (a*a) - 0.5;
         double b = (v[i]*v[i] - 2*v[i]*v[i+1] + v[i+1]*v[i+1]);
-        b = 1.0 + 0.001*b*b;
+        b = 1.0 + 0.001 * b*b;
         f += 0.5 + (a/b);
     }
 
@@ -764,3 +764,7 @@ const char* mfunc::fDesc(unsigned int f)
             return NULL;
     }
 }
+
+// =========================
+// End of mfunc.cpp
+// =========================

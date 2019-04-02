@@ -1,6 +1,25 @@
-#include "datastats.h"
-#include <cmath>
+/**
+ * @file datastats.cpp
+ * @author Andrew Dunn (Andrew.Dunn@cwu.edu)
+ * @brief Implementation file for various data statistic functions
+ * @version 0.1
+ * @date 2019-04-01
+ * 
+ * @copyright Copyright (c) 2019
+ * 
+ */
 
+#include "datastats.h"
+#include <cmath>     // sqrt()
+#include <algorithm> // std::sort()
+#include <cstddef>   // size_t definition
+
+/**
+ * @brief Calculates the average for a vector of doubles
+ * 
+ * @param v Vector of double values
+ * @return The average value of the vector
+ */
 double mdata::average(const std::vector<double>& v)
 {
     size_t vSize = v.size();
@@ -12,6 +31,12 @@ double mdata::average(const std::vector<double>& v)
     return sum / vSize;
 }
 
+/**
+ * @brief Calculates the standard deviation for a vector of doubles
+ * 
+ * @param v Vector of double values
+ * @return The standard deviation of the vector
+ */
 double mdata::standardDeviation(const std::vector<double>& v)
 {
     size_t vSize = v.size();
@@ -27,6 +52,12 @@ double mdata::standardDeviation(const std::vector<double>& v)
     return sqrt(sum / vSize);
 }
 
+/**
+ * @brief Calculates the range for a vector of doubles
+ * 
+ * @param v Vector of double values
+ * @return The range of the vector
+ */
 double mdata::range(const std::vector<double>& v)
 {
     size_t vSize = v.size();
@@ -45,6 +76,12 @@ double mdata::range(const std::vector<double>& v)
     return max - min;
 }
 
+/**
+ * @brief Calculates the median for a vector of doubles
+ * 
+ * @param v Vector of double values
+ * @return The median of the vector
+ */
 double mdata::median(const std::vector<double>& v)
 {
     size_t vSize = v.size();
@@ -72,3 +109,7 @@ double mdata::median(const std::vector<double>& v)
     delete[] vSorted;
     return retVal;
 }
+
+// =========================
+// End of datastats.cpp
+// =========================
