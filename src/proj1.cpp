@@ -14,6 +14,7 @@
 #include "datatable.h"
 #include "datastats.h"
 #include "stringutils.h"
+#include "mem.h"
 #include <iostream>
 
 using namespace std;
@@ -215,7 +216,7 @@ int mfuncExperiment::runFunc(unsigned int funcId, std::vector<double>& resultArr
     }
     
     high_resolution_clock::time_point t_end = high_resolution_clock::now();
-    timeOut = duration_cast<nanoseconds>(t_end - t_start).count() / 1000000.0;
+    timeOut = (double)duration_cast<nanoseconds>(t_end - t_start).count() / 1000000.0;
 
     return 0;
 }
@@ -317,24 +318,12 @@ bool mfuncExperiment::parseFuncBounds()
  */
 bool mfuncExperiment::allocateVMatrix()
 {
-    if (nbrSol == 0) return false;
+    if (nbrSol == 0 || nbrDim == 0) return false;
 
-    try
-    {
-        releaseVMatrix();
-        vMatrix = new double*[nbrSol];
-        
-        for (size_t i = 0; i < nbrSol; i++)
-        {
-            vMatrix[i] = new double[nbrDim];
-        }
+    releaseVMatrix();
+    vMatrix = util::allocMatrix<double>(nbrSol, nbrDim);
 
-        return true;
-    }
-    catch(const std::exception& e)
-    {
-        return false;
-    }
+    return vMatrix != nullptr;
 }
 
 /**
@@ -344,17 +333,7 @@ void mfuncExperiment::releaseVMatrix()
 {
     if (vMatrix == nullptr) return;
 
-    for (size_t i = 0; i < nbrSol; i++)
-    {
-        if (vMatrix[i] != NULL)
-        {
-            delete[] vMatrix[i];
-            vMatrix[i] = nullptr;
-        }
-    }
-
-    delete[] vMatrix;
-    vMatrix = nullptr;
+    util::releaseMatrix<double>(vMatrix, nbrSol);
 }
 
 /**
@@ -368,18 +347,8 @@ bool mfuncExperiment::allocateVBounds()
 {
     if (nbrSol == 0) return false;
 
-    try
-    {
-        releaseVBounds();
-
-        vBounds = new RandomBounds[nbrSol];
-        
-        return true;
-    }
-    catch(const std::exception& e)
-    {
-        return false;
-    }
+    vBounds = util::allocArray<proj1::RandomBounds>(nbrSol);
+    return vBounds != nullptr;
 }
 
 /**
@@ -389,8 +358,7 @@ void mfuncExperiment::releaseVBounds()
 {
     if (vBounds == nullptr) return;
 
-    delete[] vBounds;
-    vBounds = nullptr;
+    util::releaseArray<proj1::RandomBounds>(vBounds);
 }
 
 // =========================

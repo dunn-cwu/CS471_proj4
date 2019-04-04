@@ -14,17 +14,56 @@
 
 namespace util
 {
-    template <class T>
+    template <class T = double>
+    void releaseArray(T*& a)
+    {
+        if (a == nullptr) return;
+
+        delete[] a;
+        a = nullptr;
+    }
+
+    template <class T = double>
+    void releaseMatrix(T**& m, size_t rows)
+    {
+        if (m == nullptr) return;
+
+        for (size_t i = 0; i < rows; i++)
+        {
+            if (m[i] != nullptr)
+            {
+                releaseArray<T>(m[i]);
+                m[i] = nullptr;
+            }
+        }
+
+        delete[] m;
+        m = nullptr;
+    }
+
+    template <class T = double>
     inline T* allocArray(size_t size)
     {
         return new(std::nothrow) T[size];
     }
 
-    template <class T>
+    template <class T = double>
     inline T** allocMatrix(size_t rows, size_t cols)
     {
         T** m = (T**)allocArray<T*>(rows);
         if (m == nullptr) return nullptr;
+
+        for (size_t i = 0; i < rows; i++)
+        {
+            m[i] = allocArray<T>(cols);
+            if (m[i] == nullptr)
+            {
+                releaseMatrix<T>(m, rows);
+                return nullptr;
+            }
+        }
+
+        return m;
     }
 }
 
