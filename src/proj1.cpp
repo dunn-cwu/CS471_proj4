@@ -236,8 +236,8 @@ bool mfuncExperiment::genFuncVectors(unsigned int funcId)
     // Generate a new seed for the mersenne twister engine
     rgen = std::mt19937(rdev());
 
-    // Set up a uniform distribution for the random number generator with the correct function bounds
-    std::uniform_real_distribution<> dist(vBounds[funcId - 1].min, vBounds[funcId - 1].max);
+    // Set up a normal (bell-shaped) distribution for the random number generator with the correct function bounds
+    std::normal_distribution<double> dist(vBounds[funcId - 1].min, vBounds[funcId - 1].max);
 
     // Generate values for all vectors in vMatrix
     for (size_t s = 0; s < nbrSol; s++)
