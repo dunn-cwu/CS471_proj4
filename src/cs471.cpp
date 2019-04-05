@@ -1,8 +1,8 @@
 /**
- * @file proj1.cpp
+ * @file cs471.cpp
  * @author Andrew Dunn (Andrew.Dunn@cwu.edu)
- * @brief Contains the basic logic and functions to run
- * the cs471 project 1 experiment.
+ * @brief Implementation file for the mfuncExperiment class.
+ * Contains the basic logic and functions to run the cs471 project experiment.
  * @version 0.1
  * @date 2019-04-01
  * 

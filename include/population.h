@@ -19,6 +19,12 @@
 
 namespace mdata
 {
+    /**
+     * @brief Data class for storing a multi-dimensional population of data.
+     * Includes fitness analysis functions.
+     * 
+     * @tparam T Data type of the population.
+     */
     template<class T>
     class Population
     {

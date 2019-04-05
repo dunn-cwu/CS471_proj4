@@ -1,8 +1,8 @@
 /**
  * @file cs471.h
  * @author Andrew Dunn (Andrew.Dunn@cwu.edu)
- * @brief Contains the basic logic and functions to run
- * the cs471 project experiment.
+ * @brief Header file for the mfuncExperiment class.
+ * Contains the basic logic and functions to run the cs471 project experiment.
  * @version 0.1
  * @date 2019-04-01
  * 
