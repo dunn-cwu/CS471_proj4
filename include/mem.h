@@ -14,6 +14,51 @@
 
 namespace util
 {
+    /**
+     * @brief Initializes an array with some set value
+     * 
+     * @tparam Data type of array
+     * @param a Pointer to array
+     * @param size Size of the array
+     * @param val Value to initialize the array to
+     */
+    template <class T = double>
+    inline void initArray(T* a, size_t size, T val)
+    {
+        if (a == nullptr) return;
+
+        for (size_t i = 0; i < size; i++)
+        {
+            a[i] = val;
+        }
+    }
+
+    /**
+     * @brief Initializes a matrix with a set value for each entry
+     * 
+     * @tparam Data type of matrix entries
+     * @param m Pointer to a matrix
+     * @param rows Number of rows in matrix
+     * @param cols Number of columns in matrix
+     * @param val Value to initialize the matrix to
+     */
+    template <class T = double>
+    inline void initMatrix(T** m, size_t rows, size_t cols, T val)
+    {
+        if (m == nullptr) return;
+
+        for (size_t i = 0; i < rows; i++)
+        {
+            initArray(m[i], cols, val);
+        }
+    }
+
+    /**
+     * @brief Releases an allocated array's memory and sets the pointer to nullptr
+     * 
+     * @tparam Data type of array
+     * @param a Pointer to array
+     */
     template <class T = double>
     void releaseArray(T*& a)
     {
@@ -23,6 +68,13 @@ namespace util
         a = nullptr;
     }
 
+    /**
+     * @brief Releases an allocated matrix's memory and sets the pointer to nullptr
+     * 
+     * @tparam Data type of the matrix
+     * @param m Pointer th the matrix
+     * @param rows The number of rows in the matrix
+     */
     template <class T = double>
     void releaseMatrix(T**& m, size_t rows)
     {
@@ -32,21 +84,37 @@ namespace util
         {
             if (m[i] != nullptr)
             {
+                // Release each row
                 releaseArray<T>(m[i]);
-                m[i] = nullptr;
             }
         }
 
+        // Release columns
         delete[] m;
         m = nullptr;
     }
 
+    /**
+     * @brief Allocates a new array of the given data type
+     * 
+     * @tparam Data type of the array
+     * @param size Number of elements in the array
+     * @return Returns a pointer to the new array, or nullptr allocation fails
+     */
     template <class T = double>
     inline T* allocArray(size_t size)
     {
         return new(std::nothrow) T[size];
     }
 
+    /**
+     * @brief Allocates a new matrix of the given data type
+     * 
+     * @tparam Data type of the matrix entries
+     * @param rows The number of rows
+     * @param cols The number of columns
+     * @return Returns a pointer to the new matrix, or nullptr if allocation fails
+     */
     template <class T = double>
     inline T** allocMatrix(size_t rows, size_t cols)
     {

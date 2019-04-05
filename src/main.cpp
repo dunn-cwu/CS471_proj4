@@ -11,7 +11,7 @@
  */
 
 #include <iostream>
-#include "proj1.h"
+#include "cs471.h"
 
 using namespace std;
 
@@ -26,7 +26,7 @@ int main(int argc, char** argv)
    }
 
    // Create an instance of the project 1 experiment class
-   proj1::mfuncExperiment ex;
+   cs471::mfuncExperiment ex;
 
    cout << "Input parameters file: " << argv[1] << endl;
    cout << "Initializing experiment ..." << endl;

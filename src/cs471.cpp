@@ -10,21 +10,22 @@
  * 
  */
 
-#include "proj1.h"
+#include "cs471.h"
 #include "datatable.h"
 #include "datastats.h"
 #include "stringutils.h"
 #include "mem.h"
 #include <iostream>
+#include <fstream>
 
 using namespace std;
 using namespace std::chrono;
-using namespace proj1;
+using namespace cs471;
 
 /**
  * @brief Construct a new mfuncExperiment object
  */
-mfuncExperiment::mfuncExperiment() : vMatrix(nullptr), vBounds(nullptr), nbrDim(0), nbrSol(0)
+mfuncExperiment::mfuncExperiment() : population(nullptr), vBounds(nullptr), outputPop(false), outputFitness(false)
 {
 }
 
@@ -34,7 +35,7 @@ mfuncExperiment::mfuncExperiment() : vMatrix(nullptr), vBounds(nullptr), nbrDim(
  */
 mfuncExperiment::~mfuncExperiment()
 {
-    releaseVMatrix();
+    releasePopulation();
     releaseVBounds();
 }
 
@@ -51,7 +52,7 @@ bool mfuncExperiment::init(const char* paramFile)
     // Open and parse parameters file
     if (!iniParams.openFile(paramFile))
     {
-        cout << "Experiment init failed: Unable to open param file: " << paramFile << endl;
+        cerr << "Experiment init failed: Unable to open param file: " << paramFile << endl;
         return false;
     }
 
@@ -64,10 +65,10 @@ bool mfuncExperiment::init(const char* paramFile)
     {   
         std::string entry;
         
-        entry = iniParams.getEntry("test", "number");
+        entry = iniParams.getEntry("test", "population");
         if (entry.empty())
         {
-            cout << "Experiment init failed: Param file missing [test]->number entry: " << paramFile << endl;
+            cerr << "Experiment init failed: Param file missing [test]->population entry: " << paramFile << endl;
             return false;
         }
 
@@ -76,7 +77,7 @@ bool mfuncExperiment::init(const char* paramFile)
         entry = iniParams.getEntry("test", "dimensions");
         if (entry.empty())
         {
-            cout << "Experiment init failed: Param file missing [test]->dimensions entry: " << paramFile << endl;
+            cerr << "Experiment init failed: Param file missing [test]->dimensions entry: " << paramFile << endl;
             return false;
         }
 
@@ -84,46 +85,45 @@ bool mfuncExperiment::init(const char* paramFile)
 
         if (numberSol <= 0)
         {
-            cout << "Experiment init failed: Param file [test]->number entry out of bounds: " << paramFile << endl;
+            cerr << "Experiment init failed: Param file [test]->population entry out of bounds: " << paramFile << endl;
             return false;
         }
 
         if (numberDim <= 0)
         {
-            cout << "Experiment init failed: Param file [test]->dimensions entry out of bounds: " << paramFile << endl;
+            cerr << "Experiment init failed: Param file [test]->dimensions entry out of bounds: " << paramFile << endl;
             return false;
         }
     }
     catch (const std::exception& ex)
     {
-        cout << "Experiment init failed: Exception while parsing param file: " << paramFile << endl;
+        cerr << "Experiment init failed: Exception while parsing param file: " << paramFile << endl;
         return false;
     }
 
-    nbrSol = (size_t)numberSol;
-    nbrDim = (size_t)numberDim;
-
     // Get csv output file path
-    resultsFile = iniParams.getEntry("test", "output_file");
+    resultsFile = iniParams.getEntry("test", "results_file");
+    outputPop = iniParams.getEntry("test", "output_population") == "true";
+    outputFitness = iniParams.getEntry("test", "output_fitness") == "true";
 
     // Allocate memory for vector * solutions matrix
-    if (!allocateVMatrix()) 
+    if (!allocatePopulation((size_t)numberSol, (size_t)numberDim))
     {
-        cout << "Experiment init failed: Unable to allocate vector matrix." << endl;
+        cerr << "Experiment init failed: Unable to allocate population matrix." << endl;
         return false;
     }
 
     // Allocate memory for function bounds
     if (!allocateVBounds()) 
     {
-        cout << "Experiment init failed: Unable to allocate vector bounds array." << endl;
+        cerr << "Experiment init failed: Unable to allocate vector bounds array." << endl;
         return false;
     }
 
     // Fill function bounds array with data parsed from iniParams
     if (!parseFuncBounds())
     {
-        cout << "Experiment init failed: Unable to parse vector bounds array." << endl;
+        cerr << "Experiment init failed: Unable to parse vector bounds array." << endl;
         return false;
     }
 
@@ -139,7 +139,7 @@ bool mfuncExperiment::init(const char* paramFile)
  */
 int mfuncExperiment::runAllFunc()
 {
-    if (vMatrix == nullptr || nbrDim == 0 || nbrSol == 0) return 1;
+    if (population == nullptr || !population->isReady()) return 1;
 
     // function desc. | average | standard dev. | range | median | time
     mdata::DataTable resultsTable(8);
@@ -152,27 +152,48 @@ int mfuncExperiment::runAllFunc()
     resultsTable.setColLabel(6, "Median");
     resultsTable.setColLabel(7, "Total Time (ms)");
 
-    // Create a vector which is used to store all function results
-    std::vector<double> fResults;
     double fTime = 0.0;
+    ofstream fitnessFile;
+    if (outputFitness)
+    {
+        std::string fitFile = "fitness-dim_";
+        fitFile += to_string(population->getDimensionsSize());
+        fitFile += ".csv";
+        fitnessFile.open(fitFile, ios::out | ios::trunc);
+        if (!fitnessFile.good()) outputFitness = false;
+    }
 
     // Execute all functions
     for (unsigned int f = 1; f <= mfunc::NUM_FUNCTIONS; f++)
     {
-        int err = runFunc(f, fResults, fTime);
+        int err = runFunc(f, fTime);
         if (err)
+        {
+            if (outputFitness) fitnessFile.close();
             return err;
+        }
         else
         {
-            // Insert function result and statistics into results table as a new row
+            // Export all population data if flag is set
+            if (outputPop)
+                exportPop(f);
+
+            // Export all fitness data if flag is set
+            if (outputFitness)
+            {
+                fitnessFile << mfunc::fDesc(f) << ",";
+                population->outputFitness(fitnessFile, ",", "\n");
+            }
+
+            // Insert function results and statistics into the results table as a new row
             unsigned int rowIndex = resultsTable.addRow();
             resultsTable.setEntry(rowIndex, 0, mfunc::fDesc(f));
             resultsTable.setEntry(rowIndex, 1, to_string(vBounds[f-1].min));
             resultsTable.setEntry(rowIndex, 2, to_string(vBounds[f-1].max));
-            resultsTable.setEntry(rowIndex, 3, mdata::average(fResults));
-            resultsTable.setEntry(rowIndex, 4, mdata::standardDeviation(fResults));
-            resultsTable.setEntry(rowIndex, 5, mdata::range(fResults));
-            resultsTable.setEntry(rowIndex, 6, mdata::median(fResults));
+            resultsTable.setEntry(rowIndex, 3, population->getFitnessAverage());
+            resultsTable.setEntry(rowIndex, 4, population->getFitnessStandardDev());
+            resultsTable.setEntry(rowIndex, 5, population->getFitnessRange());
+            resultsTable.setEntry(rowIndex, 6, population->getFitnessMedian());
             resultsTable.setEntry(rowIndex, 7, fTime);
         }
     }
@@ -184,6 +205,7 @@ int mfuncExperiment::runAllFunc()
         resultsTable.exportCSV(resultsFile.c_str());
     }
 
+    if (outputFitness) fitnessFile.close();
     return 0;
 }
 
@@ -196,23 +218,25 @@ int mfuncExperiment::runAllFunc()
  * @param timeOut Out reference variable that the execution time in ms is set to.
  * @return Returns 0 on success. Returns a non-zero error code on failure.
  */
-int mfuncExperiment::runFunc(unsigned int funcId, std::vector<double>& resultArrOut, double& timeOut)
+int mfuncExperiment::runFunc(unsigned int funcId, double& timeOut)
 {
     if (!genFuncVectors(funcId)) return 1;
 
-    resultArrOut.clear();
-    resultArrOut.reserve(nbrSol);
-
     double fResult = 0;
+    size_t nbrSol = population->getPopulationSize();
+    size_t nbrDim = population->getDimensionsSize();
+    double* curPop = nullptr;
 
     high_resolution_clock::time_point t_start = high_resolution_clock::now();
 
     for (int i = 0; i < nbrSol; i++)
     {
-        if (!mfunc::fExec(funcId, vMatrix[i], nbrDim, fResult))
+        curPop = population->getPopulation(i);
+        if (curPop == nullptr || !mfunc::fExec(funcId, curPop, nbrDim, fResult))
             return 2;
 
-        resultArrOut.push_back(fResult);
+        if (!population->setFitness(i, fResult))
+            return 3;
     }
     
     high_resolution_clock::time_point t_end = high_resolution_clock::now();
@@ -223,33 +247,16 @@ int mfuncExperiment::runFunc(unsigned int funcId, std::vector<double>& resultArr
 
 /**
  * @brief Helper function called by mfuncExperiment::runFunc.
- * Generates 'nbrSol' random vectors of dimensions 'nbrDim' that
- * are within the correct bounds for the specified function. All
- * vectors are stored in the vMatrix two-dimensional array.
+ * Generates a random population to be used as input for the functions.
  * 
  * @param funcId The id of the function to retrieve the vector bounds for
- * @return Returns true if all vectors were succesfully generated. Otherwise false.
+ * @return Returns true if the population was succesfully generated. Otherwise false.
  */
 bool mfuncExperiment::genFuncVectors(unsigned int funcId)
 {
-    if (vMatrix == nullptr || vBounds == nullptr || funcId == 0 || funcId > mfunc::NUM_FUNCTIONS) return false;
+    if (population == nullptr || vBounds == nullptr || funcId == 0 || funcId > mfunc::NUM_FUNCTIONS) return false;
 
-    // Generate a new seed for the mersenne twister engine
-    rgen = std::mt19937(rdev());
-
-    // Set up a normal (bell-shaped) distribution for the random number generator with the correct function bounds
-    std::normal_distribution<double> dist(vBounds[funcId - 1].min, vBounds[funcId - 1].max);
-
-    // Generate values for all vectors in vMatrix
-    for (size_t s = 0; s < nbrSol; s++)
-    {
-        for (size_t d = 0; d < nbrDim; d++)
-        {
-            vMatrix[s][d] = dist(rgen);
-        }
-    }
-
-    return true;
+    return population->generate(vBounds[funcId - 1].min, vBounds[funcId - 1].max);
 }
 
 /**
@@ -274,7 +281,7 @@ bool mfuncExperiment::parseFuncBounds()
         string entry = iniParams.getEntry(section, to_string(i));
         if (entry.empty())
         {
-            cout << "Error parsing bounds for function: " << i << endl;
+            cerr << "Error parsing bounds for function: " << i << endl;
             return false;
         }
 
@@ -282,7 +289,7 @@ bool mfuncExperiment::parseFuncBounds()
         auto delimPos = entry.find(delim);
         if (delimPos == string::npos || delimPos >= entry.length() - 1)
         {
-            cout << "Error parsing bounds for function: " << i << endl;
+            cerr << "Error parsing bounds for function: " << i << endl;
             return false;
         }
 
@@ -295,13 +302,13 @@ bool mfuncExperiment::parseFuncBounds()
         // Attempt to parse min and max strings into double values
         try
         {
-            RandomBounds& b = vBounds[i - 1];
+            RandomBounds<double>& b = vBounds[i - 1];
             b.min = atof(s_min.c_str());
             b.max = atof(s_max.c_str());
         }
         catch(const std::exception& e)
         {
-            cout << "Error parsing bounds for function: " << i << endl;
+            cerr << "Error parsing bounds for function: " << i << endl;
             std::cerr << e.what() << '\n';
             return false;
         }
@@ -311,29 +318,63 @@ bool mfuncExperiment::parseFuncBounds()
 }
 
 /**
+ * @brief Helper function that exports all current population data
+ * to a file.
+ * 
+ * @param func The id of the function data being exported
+ */
+void mfuncExperiment::exportPop(unsigned int func)
+{
+    ofstream popFile;
+
+    std::string fName = "pop-func_";
+    fName += std::to_string(func);
+    fName += "-dim_";
+    fName += std::to_string(population->getDimensionsSize());
+    fName += ".csv";
+
+    popFile.open(fName.c_str(), ios::out | ios::trunc);
+    if (!popFile.good())
+    {
+        cerr << "Unable to open pop output file." << endl;
+        return;
+    }
+
+    population->outputPopulation(popFile, ",", "\n");
+    popFile.close();
+}
+
+/**
  * @brief Allocates the vector * solutions matrix, which is used to store
  * all input vectors for the current function being tested.
  * 
  * @return Returns true if the memory was successfully allocated. Otherwise false.
  */
-bool mfuncExperiment::allocateVMatrix()
+bool mfuncExperiment::allocatePopulation(size_t popSize, size_t dimensions)
 {
-    if (nbrSol == 0 || nbrDim == 0) return false;
+    releasePopulation();
 
-    releaseVMatrix();
-    vMatrix = util::allocMatrix<double>(nbrSol, nbrDim);
-
-    return vMatrix != nullptr;
+    try
+    {
+        population = new(std::nothrow) mdata::Population<double>(popSize, dimensions);
+        return population != nullptr;
+    }
+    catch(const std::exception& e)
+    {
+        std::cerr << e.what() << '\n';
+        return false;
+    }
 }
 
 /**
  * @brief Releases memory used by the vector matrix
  */
-void mfuncExperiment::releaseVMatrix()
+void mfuncExperiment::releasePopulation()
 {
-    if (vMatrix == nullptr) return;
+    if (population == nullptr) return;
 
-    util::releaseMatrix<double>(vMatrix, nbrSol);
+    delete population;
+    population = nullptr;
 }
 
 /**
@@ -345,9 +386,9 @@ void mfuncExperiment::releaseVMatrix()
  */
 bool mfuncExperiment::allocateVBounds()
 {
-    if (nbrSol == 0) return false;
+    if (population == nullptr) return false;
 
-    vBounds = util::allocArray<proj1::RandomBounds>(nbrSol);
+    vBounds = util::allocArray<RandomBounds<double>>(population->getPopulationSize());
     return vBounds != nullptr;
 }
 
@@ -358,7 +399,7 @@ void mfuncExperiment::releaseVBounds()
 {
     if (vBounds == nullptr) return;
 
-    util::releaseArray<proj1::RandomBounds>(vBounds);
+    util::releaseArray<RandomBounds<double>>(vBounds);
 }
 
 // =========================
