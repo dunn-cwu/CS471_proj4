@@ -328,8 +328,8 @@ void Population<T>::releasePopFitness()
     releaseArray<T>(popFitness);
 }
 
-template class Population<double>;
-template class Population<long>;
+template class mdata::Population<double>;
+template class mdata::Population<long>;
 
 // =========================
 // End of population.cpp
