@@ -1,6 +1,7 @@
 /**
  * Copyright (c) 2012 Jakob Progsch, Václav Zeman
-
+ * https://github.com/progschj/ThreadPool
+ * 
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
  * arising from the use of this software.
@@ -19,7 +20,6 @@
  *
  *  3. This notice may not be removed or altered from any source
  *  distribution.
- * 
  */
 
 #ifndef THREAD_POOL_H
