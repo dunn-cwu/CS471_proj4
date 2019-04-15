@@ -20,6 +20,9 @@
 #include "mfunc.h"
 #include "inireader.h"
 #include "population.h"
+#include "threadpool.h"
+
+#define DEFAULT_NUM_THREADS 1
 
 namespace cs471
 {
@@ -57,6 +60,7 @@ namespace cs471
         std::string resultsFile;   /** The file path for the results output *.csv file */
         mdata::Population<double>* population; /** Data class that stores a population matrix and results fitness vector */
         RandomBounds<double>* vBounds; /** An array of RandomBounds structs that holds the function bounds read from iniParams */
+        ThreadPool* tPool;
         bool outputPop; /** If set to true, all population data will be exported to files */
         bool outputFitness; /** If set to true, all fitness data will be exported to files */
 
@@ -71,6 +75,9 @@ namespace cs471
 
         bool allocateVBounds();
         void releaseVBounds();
+
+        bool allocateThreadPool(size_t numThreads);
+        void releaseThreadPool();
     };
 } // proj1
 

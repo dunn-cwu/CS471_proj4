@@ -25,7 +25,7 @@ using namespace cs471;
 /**
  * @brief Construct a new mfuncExperiment object
  */
-mfuncExperiment::mfuncExperiment() : population(nullptr), vBounds(nullptr), outputPop(false), outputFitness(false)
+mfuncExperiment::mfuncExperiment() : population(nullptr), vBounds(nullptr), outputPop(false), outputFitness(false), tPool(nullptr)
 {
 }
 
@@ -35,6 +35,7 @@ mfuncExperiment::mfuncExperiment() : population(nullptr), vBounds(nullptr), outp
  */
 mfuncExperiment::~mfuncExperiment()
 {
+    releaseThreadPool();
     releasePopulation();
     releaseVBounds();
 }
@@ -58,8 +59,9 @@ bool mfuncExperiment::init(const char* paramFile)
 
     long numberSol;
     long numberDim;
+    long numberThreads;
 
-    // Attempt to parse number of solutions and vector dimensions size
+    // Attempt to parse number of solutions, vector dimensions size, and number of threads
     // from iniParams
     try 
     {   
@@ -83,15 +85,28 @@ bool mfuncExperiment::init(const char* paramFile)
 
         numberDim = std::atol(entry.c_str());
 
+        entry = iniParams.getEntry("test", "num_threads");
+        if (entry.empty())
+        {
+            cerr << "Experiment init failed: Param file missing [test]->num_threads entry: " << paramFile << endl;
+            return false;
+        }
+
+        numberThreads = std::atol(entry.c_str());
+
         if (numberSol <= 0)
         {
             cerr << "Experiment init failed: Param file [test]->population entry out of bounds: " << paramFile << endl;
             return false;
         }
-
-        if (numberDim <= 0)
+        else if (numberDim <= 0)
         {
             cerr << "Experiment init failed: Param file [test]->dimensions entry out of bounds: " << paramFile << endl;
+            return false;
+        }
+        else if (numberThreads <= 0)
+        {
+            cerr << "Experiment init failed: Param file [test]->num_threads entry out of bounds: " << paramFile << endl;
             return false;
         }
     }
@@ -119,6 +134,14 @@ bool mfuncExperiment::init(const char* paramFile)
         cerr << "Experiment init failed: Unable to allocate vector bounds array." << endl;
         return false;
     }
+
+    // Allocate thread pool
+    if (!allocateThreadPool((size_t)numberThreads))
+    {
+        cerr << "Experiment init failed: Unable to allocate thread pool." << endl;
+        return false;
+    }
+
 
     // Fill function bounds array with data parsed from iniParams
     if (!parseFuncBounds())
@@ -400,6 +423,22 @@ void mfuncExperiment::releaseVBounds()
     if (vBounds == nullptr) return;
 
     util::releaseArray<RandomBounds<double>>(vBounds);
+}
+
+bool mfuncExperiment::allocateThreadPool(size_t numThreads)
+{
+    releaseThreadPool();
+
+    tPool = new(std::nothrow) ThreadPool(numThreads);
+    return tPool != nullptr;
+}
+
+void mfuncExperiment::releaseThreadPool()
+{
+    if (tPool == nullptr) return;
+
+    delete tPool;
+    tPool = nullptr;
 }
 
 // =========================
