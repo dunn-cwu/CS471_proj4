@@ -25,7 +25,7 @@ using namespace cs471;
 /**
  * @brief Construct a new mfuncExperiment object
  */
-mfuncExperiment::mfuncExperiment() : population(nullptr), vBounds(nullptr), outputPop(false), outputFitness(false), tPool(nullptr)
+mfuncExperiment::mfuncExperiment() : populations(nullptr), vBounds(nullptr), outputPop(false), outputFitness(false), tPool(nullptr)
 {
 }
 
@@ -36,7 +36,7 @@ mfuncExperiment::mfuncExperiment() : population(nullptr), vBounds(nullptr), outp
 mfuncExperiment::~mfuncExperiment()
 {
     releaseThreadPool();
-    releasePopulation();
+    releasePopulations();
     releaseVBounds();
 }
 
@@ -116,15 +116,18 @@ bool mfuncExperiment::init(const char* paramFile)
         return false;
     }
 
+    cout << "Population size: " << numberSol << endl;
+    cout << "Dimensions: " << numberDim << endl;
+
     // Get csv output file path
     resultsFile = iniParams.getEntry("test", "results_file");
     outputPop = iniParams.getEntry("test", "output_population") == "true";
     outputFitness = iniParams.getEntry("test", "output_fitness") == "true";
 
     // Allocate memory for vector * solutions matrix
-    if (!allocatePopulation((size_t)numberSol, (size_t)numberDim))
+    if (!allocatePopulations((size_t)numberSol, (size_t)numberDim))
     {
-        cerr << "Experiment init failed: Unable to allocate population matrix." << endl;
+        cerr << "Experiment init failed: Unable to allocate populations." << endl;
         return false;
     }
 
@@ -142,6 +145,7 @@ bool mfuncExperiment::init(const char* paramFile)
         return false;
     }
 
+    cout << "Started " << numberThreads << " worker threads." << endl;
 
     // Fill function bounds array with data parsed from iniParams
     if (!parseFuncBounds())
@@ -162,7 +166,9 @@ bool mfuncExperiment::init(const char* paramFile)
  */
 int mfuncExperiment::runAllFunc()
 {
-    if (population == nullptr || !population->isReady()) return 1;
+    if (populations == nullptr) return 1;
+
+    std::vector<std::future<TestResult>> testFutures;
 
     // function desc. | average | standard dev. | range | median | time
     mdata::DataTable resultsTable(8);
@@ -175,28 +181,39 @@ int mfuncExperiment::runAllFunc()
     resultsTable.setColLabel(6, "Median");
     resultsTable.setColLabel(7, "Total Time (ms)");
 
-    double fTime = 0.0;
     ofstream fitnessFile;
     if (outputFitness)
     {
         std::string fitFile = "fitness-dim_";
-        fitFile += to_string(population->getDimensionsSize());
+        fitFile += to_string(populations[0]->getDimensionsSize());
         fitFile += ".csv";
         fitnessFile.open(fitFile, ios::out | ios::trunc);
         if (!fitnessFile.good()) outputFitness = false;
     }
 
-    // Execute all functions
+    high_resolution_clock::time_point t_start = high_resolution_clock::now();
+
+    // Queue all functions to be ran by our thread pool
     for (unsigned int f = 1; f <= mfunc::NUM_FUNCTIONS; f++)
     {
-        int err = runFunc(f, fTime);
-        if (err)
+        testFutures.emplace_back(
+            tPool->enqueue(&mfuncExperiment::runFunc, this, f)
+        );
+    }
+
+    // Join and get all function return values from thread pool workers
+    for (unsigned int f = 1; f <= mfunc::NUM_FUNCTIONS; f++)
+    {
+        TestResult tRes = testFutures[f-1].get();
+        if (tRes.err)
         {
             if (outputFitness) fitnessFile.close();
-            return err;
+            return tRes.err;
         }
         else
         {
+            mdata::Population<double>* curPopObj = populations[f - 1];
+
             // Export all population data if flag is set
             if (outputPop)
                 exportPop(f);
@@ -205,7 +222,7 @@ int mfuncExperiment::runAllFunc()
             if (outputFitness)
             {
                 fitnessFile << mfunc::fDesc(f) << ",";
-                population->outputFitness(fitnessFile, ",", "\n");
+                curPopObj->outputFitness(fitnessFile, ",", "\n");
             }
 
             // Insert function results and statistics into the results table as a new row
@@ -213,13 +230,18 @@ int mfuncExperiment::runAllFunc()
             resultsTable.setEntry(rowIndex, 0, mfunc::fDesc(f));
             resultsTable.setEntry(rowIndex, 1, to_string(vBounds[f-1].min));
             resultsTable.setEntry(rowIndex, 2, to_string(vBounds[f-1].max));
-            resultsTable.setEntry(rowIndex, 3, population->getFitnessAverage());
-            resultsTable.setEntry(rowIndex, 4, population->getFitnessStandardDev());
-            resultsTable.setEntry(rowIndex, 5, population->getFitnessRange());
-            resultsTable.setEntry(rowIndex, 6, population->getFitnessMedian());
-            resultsTable.setEntry(rowIndex, 7, fTime);
+            resultsTable.setEntry(rowIndex, 3, curPopObj->getFitnessAverage());
+            resultsTable.setEntry(rowIndex, 4, curPopObj->getFitnessStandardDev());
+            resultsTable.setEntry(rowIndex, 5, curPopObj->getFitnessRange());
+            resultsTable.setEntry(rowIndex, 6, curPopObj->getFitnessMedian());
+            resultsTable.setEntry(rowIndex, 7, tRes.execTime);
         }
     }
+
+    high_resolution_clock::time_point t_end = high_resolution_clock::now();
+    double totalExecTime = (double)duration_cast<nanoseconds>(t_end - t_start).count() / 1000000.0;
+
+    cout << "Total test time: " << totalExecTime << " miliseconds." << endl;
 
     if (!resultsFile.empty())
     {
@@ -241,31 +263,32 @@ int mfuncExperiment::runAllFunc()
  * @param timeOut Out reference variable that the execution time in ms is set to.
  * @return Returns 0 on success. Returns a non-zero error code on failure.
  */
-int mfuncExperiment::runFunc(unsigned int funcId, double& timeOut)
+TestResult mfuncExperiment::runFunc(unsigned int funcId)
 {
-    if (!genFuncVectors(funcId)) return 1;
+    if (!genFuncVectors(funcId)) return TestResult(1, 0.0);
 
     double fResult = 0;
-    size_t nbrSol = population->getPopulationSize();
-    size_t nbrDim = population->getDimensionsSize();
+    auto curPopObj = populations[funcId - 1];
+    size_t nbrSol = curPopObj->getPopulationSize();
+    size_t nbrDim = curPopObj->getDimensionsSize();
     double* curPop = nullptr;
 
     high_resolution_clock::time_point t_start = high_resolution_clock::now();
 
     for (int i = 0; i < nbrSol; i++)
     {
-        curPop = population->getPopulation(i);
+        curPop = curPopObj->getPopulation(i);
         if (curPop == nullptr || !mfunc::fExec(funcId, curPop, nbrDim, fResult))
-            return 2;
+            return TestResult(2, 0.0);
 
-        if (!population->setFitness(i, fResult))
-            return 3;
+        if (!curPopObj->setFitness(i, fResult))
+            return TestResult(3, 0.0);
     }
     
     high_resolution_clock::time_point t_end = high_resolution_clock::now();
-    timeOut = (double)duration_cast<nanoseconds>(t_end - t_start).count() / 1000000.0;
+    double execTime = (double)duration_cast<nanoseconds>(t_end - t_start).count() / 1000000.0;
 
-    return 0;
+    return TestResult(0, execTime);
 }
 
 /**
@@ -277,9 +300,9 @@ int mfuncExperiment::runFunc(unsigned int funcId, double& timeOut)
  */
 bool mfuncExperiment::genFuncVectors(unsigned int funcId)
 {
-    if (population == nullptr || vBounds == nullptr || funcId == 0 || funcId > mfunc::NUM_FUNCTIONS) return false;
+    if (populations == nullptr || vBounds == nullptr || funcId == 0 || funcId > mfunc::NUM_FUNCTIONS) return false;
 
-    return population->generate(vBounds[funcId - 1].min, vBounds[funcId - 1].max);
+    return populations[funcId - 1]->generate(vBounds[funcId - 1].min, vBounds[funcId - 1].max);
 }
 
 /**
@@ -353,7 +376,7 @@ void mfuncExperiment::exportPop(unsigned int func)
     std::string fName = "pop-func_";
     fName += std::to_string(func);
     fName += "-dim_";
-    fName += std::to_string(population->getDimensionsSize());
+    fName += std::to_string(populations[func - 1]->getDimensionsSize());
     fName += ".csv";
 
     popFile.open(fName.c_str(), ios::out | ios::trunc);
@@ -363,7 +386,7 @@ void mfuncExperiment::exportPop(unsigned int func)
         return;
     }
 
-    population->outputPopulation(popFile, ",", "\n");
+    populations[func - 1]->outputPopulation(popFile, ",", "\n");
     popFile.close();
 }
 
@@ -373,14 +396,26 @@ void mfuncExperiment::exportPop(unsigned int func)
  * 
  * @return Returns true if the memory was successfully allocated. Otherwise false.
  */
-bool mfuncExperiment::allocatePopulation(size_t popSize, size_t dimensions)
+bool mfuncExperiment::allocatePopulations(size_t popSize, size_t dimensions)
 {
-    releasePopulation();
+    releasePopulations();
 
     try
     {
-        population = new(std::nothrow) mdata::Population<double>(popSize, dimensions);
-        return population != nullptr;
+        populations = new(std::nothrow) mdata::Population<double>*[mfunc::NUM_FUNCTIONS];
+        if (populations == nullptr) return false;
+
+        for (int i = 0; i < mfunc::NUM_FUNCTIONS; i++)
+        {
+            populations[i] = new(std::nothrow) mdata::Population<double>(popSize, dimensions);
+            if (populations[i] == nullptr)
+            {
+                releasePopulations();
+                return false;
+            }
+        }
+
+        return true;
     }
     catch(const std::exception& e)
     {
@@ -392,12 +427,21 @@ bool mfuncExperiment::allocatePopulation(size_t popSize, size_t dimensions)
 /**
  * @brief Releases memory used by the vector matrix
  */
-void mfuncExperiment::releasePopulation()
+void mfuncExperiment::releasePopulations()
 {
-    if (population == nullptr) return;
+    if (populations == nullptr) return;
 
-    delete population;
-    population = nullptr;
+    for (int i = 0; i < mfunc::NUM_FUNCTIONS; i++)
+    {
+        if (populations[i] != nullptr)
+        {
+            delete populations[i];
+            populations[i] = nullptr;
+        }
+    }
+
+    delete[] populations;
+    populations = nullptr;
 }
 
 /**
@@ -409,9 +453,9 @@ void mfuncExperiment::releasePopulation()
  */
 bool mfuncExperiment::allocateVBounds()
 {
-    if (population == nullptr) return false;
+    if (populations == nullptr) return false;
 
-    vBounds = util::allocArray<RandomBounds<double>>(population->getPopulationSize());
+    vBounds = util::allocArray<RandomBounds<double>>(mfunc::NUM_FUNCTIONS);
     return vBounds != nullptr;
 }
 

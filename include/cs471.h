@@ -37,6 +37,16 @@ namespace cs471
         T max = 0.0;
     };
 
+    struct TestResult
+    {
+        const int err;
+        const double execTime;
+
+        TestResult(int _err, double _execTime) : err(_err), execTime(_execTime)
+        {
+        }
+    };
+
     /**
      * @brief Contains classes for running the CS471 project experiment.
      * 
@@ -54,11 +64,11 @@ namespace cs471
         ~mfuncExperiment();
         bool init(const char* paramFile);
         int runAllFunc();
-        int runFunc(unsigned int funcId, double& timeOut);
+        TestResult runFunc(unsigned int funcId);
     private:
         util::IniReader iniParams; /** IniReader class instance for importing experiment parameters */
         std::string resultsFile;   /** The file path for the results output *.csv file */
-        mdata::Population<double>* population; /** Data class that stores a population matrix and results fitness vector */
+        mdata::Population<double>** populations; /** Array of population objects that contain matrices and fitness arrays for each function */
         RandomBounds<double>* vBounds; /** An array of RandomBounds structs that holds the function bounds read from iniParams */
         ThreadPool* tPool;
         bool outputPop; /** If set to true, all population data will be exported to files */
@@ -70,8 +80,8 @@ namespace cs471
 
         void exportPop(unsigned int func);
 
-        bool allocatePopulation(size_t popSize, size_t dimensions);
-        void releasePopulation();
+        bool allocatePopulations(size_t popSize, size_t dimensions);
+        void releasePopulations();
 
         bool allocateVBounds();
         void releaseVBounds();

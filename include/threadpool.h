@@ -20,6 +20,10 @@
  *
  *  3. This notice may not be removed or altered from any source
  *  distribution.
+ * 
+ * ================================
+ * 
+ * This source file has been modified by Andrew Dunn to add additional functions
  */
 
 #ifndef THREAD_POOL_H
@@ -42,6 +46,8 @@ public:
     auto enqueue(F&& f, Args&&... args) 
         -> std::future<typename std::result_of<F(Args...)>::type>;
     ~ThreadPool();
+
+    void stopAndJoinAll();
 private:
     // need to keep track of threads so we can join them
     std::vector< std::thread > workers;
@@ -110,10 +116,16 @@ auto ThreadPool::enqueue(F&& f, Args&&... args)
 // the destructor joins all threads
 inline ThreadPool::~ThreadPool()
 {
+    stopAndJoinAll();
+}
+
+inline void ThreadPool::stopAndJoinAll()
+{
     {
         std::unique_lock<std::mutex> lock(queue_mutex);
         stop = true;
     }
+
     condition.notify_all();
     for(std::thread &worker: workers)
         worker.join();
