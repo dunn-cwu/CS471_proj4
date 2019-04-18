@@ -266,26 +266,30 @@ int mfuncExperiment::runAllFunc()
  */
 mdata::TestResult mfuncExperiment::runFunc(unsigned int funcId)
 {
-    if (!genFuncVectors(funcId)) return mdata::TestResult(1, 0.0);
+    // if (!genFuncVectors(funcId)) return mdata::TestResult(1, 0.0);
 
-    mfunc::mfuncPtr fPtr = mfunc::fGet(funcId);
-    if (fPtr == nullptr) return mdata::TestResult(2, 0.0);
+    // mfunc::mfuncPtr<double> fPtr = mfunc::fGet<double>(funcId);
+    // if (fPtr == nullptr) return mdata::TestResult(2, 0.0);
 
-    auto curPopObj = populations[funcId - 1];
-    size_t nbrSol = curPopObj->getPopulationSize();
+    // auto curPopObj = populations[funcId - 1];
+    // size_t nbrSol = curPopObj->getPopulationSize();
 
-    high_resolution_clock::time_point t_start = high_resolution_clock::now();
+    // high_resolution_clock::time_point t_start = high_resolution_clock::now();
 
-    for (int i = 0; i < nbrSol; i++)
-    {
-        if (!curPopObj->setFitness(i, fPtr))
-            return mdata::TestResult(4, 0.0);
-    }
+    // for (int i = 0; i < nbrSol; i++)
+    // {
+    //     if (!curPopObj->setFitness(i, fPtr))
+    //         return mdata::TestResult(4, 0.0);
+    // }
     
-    high_resolution_clock::time_point t_end = high_resolution_clock::now();
-    double execTime = (double)duration_cast<nanoseconds>(t_end - t_start).count() / 1000000.0;
+    // high_resolution_clock::time_point t_end = high_resolution_clock::now();
+    // double execTime = (double)duration_cast<nanoseconds>(t_end - t_start).count() / 1000000.0;
 
-    return mdata::TestResult(0, execTime);
+    // return mdata::TestResult(0, execTime);
+
+    mdata::BlindSearch<double> bs;
+
+    return bs.run(funcId, vBounds[funcId - 1].min, vBounds[funcId - 1].max, populations[funcId - 1], 30, 0);
 }
 
 /**

@@ -20,65 +20,90 @@
 namespace mfunc
 {
     extern const unsigned int NUM_FUNCTIONS;
-    typedef double (*mfuncPtr)(double*, size_t);
+
+    template <class T>
+    using mfuncPtr = T (*)(T*, size_t);
 
     const char* schwefelDesc();
-    double schwefel(double* v, size_t n);
-
     const char* dejongDesc();
-    double dejong(double* v, size_t n);
-
     const char* rosenbrokDesc();
-    double rosenbrok(double* v, size_t n);
-
     const char* rastriginDesc();
-    double rastrigin(double* v, size_t n);
-
     const char* griewangkDesc();
-    double griewangk(double* v, size_t n);
-
     const char* sineEnvelopeSineWaveDesc();
-    double sineEnvelopeSineWave(double* v, size_t n);
-
     const char* stretchedVSineWaveDesc();
-    double stretchedVSineWave(double* v, size_t n);
-
     const char* ackleysOneDesc();
-    double ackleysOne(double* v, size_t n);
-
     const char* ackleysTwoDesc();
-    double ackleysTwo(double* v, size_t n);
-
     const char* eggHolderDesc();
-    double eggHolder(double* v, size_t n);
-
     const char* ranaDesc();
-    double rana(double* v, size_t n);
-
     const char* pathologicalDesc();
-    double pathological(double* v, size_t n);
-
     const char* michalewiczDesc();
-    double michalewicz(double* v, size_t n);
-
     const char* mastersCosineWaveDesc();
-    double mastersCosineWave(double* v, size_t n);
-
     const char* quarticDesc();
-    double quartic(double* v, size_t n);
-
     const char* levyDesc();
-    double levy(double* v, size_t n);
-
     const char* stepDesc();
-    double step(double* v, size_t n);
-
     const char* alpineDesc();
-    double alpine(double* v, size_t n);
 
-    bool fExec(unsigned int f, double* v, size_t n, double& outResult);
+    template <class T>
+    T schwefel(T* v, size_t n);
+
+    template <class T>
+    T dejong(T* v, size_t n);
+
+    template <class T>
+    T rosenbrok(T* v, size_t n);
+
+    template <class T>
+    T rastrigin(T* v, size_t n);
+
+    template <class T>
+    T griewangk(T* v, size_t n);
+    
+    template <class T>
+    T sineEnvelopeSineWave(T* v, size_t n);
+
+    template <class T>
+    T stretchedVSineWave(T* v, size_t n);
+
+    template <class T>
+    T ackleysOne(T* v, size_t n);
+
+    template <class T>
+    T ackleysTwo(T* v, size_t n);
+
+    template <class T>
+    T eggHolder(T* v, size_t n);
+
+    template <class T>
+    T rana(T* v, size_t n);
+
+    template <class T>
+    T pathological(T* v, size_t n);
+
+    template <class T>
+    T michalewicz(T* v, size_t n);
+
+    template <class T>
+    T mastersCosineWave(T* v, size_t n);
+
+    template <class T>
+    T quartic(T* v, size_t n);
+
+    template <class T>
+    T levy(T* v, size_t n);
+
+    template <class T>
+    T step(T* v, size_t n);
+
+    template <class T>
+    T alpine(T* v, size_t n);
+
+    template <class T>
+    bool fExec(unsigned int f, T* v, size_t n, T& outResult);
+
     const char* fDesc(unsigned int f);
-    mfuncPtr fGet(unsigned int f);
+
+    template <class T>
+    mfuncPtr<T> fGet(unsigned int f);
 }
 
 #endif

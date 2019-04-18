@@ -66,9 +66,10 @@ const char* mfunc::schwefelDesc()
  * @param n Size of the vector 'v'
  * @return The result of the mathematical function 
  */
-double mfunc::schwefel(double* v, size_t n)
+template <class T>
+T mfunc::schwefel(T* v, size_t n)
 {
-    double f = 0.0;
+    T f = 0.0;
 
     for (size_t i = 0; i < n; i++)
     {
@@ -96,9 +97,10 @@ const char* mfunc::dejongDesc()
  * @param n Size of the vector 'v'
  * @return The result of the mathematical function 
  */
-double mfunc::dejong(double* v, size_t n)
+template <class T>
+T mfunc::dejong(T* v, size_t n)
 {
-    double f = 0.0;
+    T f = 0.0;
 
     for (size_t i = 0; i < n; i++)
     {
@@ -126,14 +128,15 @@ const char* mfunc::rosenbrokDesc()
  * @param n Size of the vector 'v'
  * @return The result of the mathematical function 
  */
-double mfunc::rosenbrok(double* v, size_t n)
+template <class T>
+T mfunc::rosenbrok(T* v, size_t n)
 {
-    double f = 0.0;
+    T f = 0.0;
 
     for (size_t i = 0; i < n - 1; i++)
     {
-        double a = ((v[i] * v[i]) - v[i+1]);
-        double b = (1.0 - v[i]);
+        T a = ((v[i] * v[i]) - v[i+1]);
+        T b = (1.0 - v[i]);
         f += 100.0 * a * a;
         f += b * b;
     }
@@ -159,9 +162,10 @@ const char* mfunc::rastriginDesc()
  * @param n Size of the vector 'v'
  * @return The result of the mathematical function 
  */
-double mfunc::rastrigin(double* v, size_t n)
+template <class T>
+T mfunc::rastrigin(T* v, size_t n)
 {
-    double f = 0.0;
+    T f = 0.0;
 
     for (size_t i = 0; i < n; i++)
     {
@@ -189,10 +193,11 @@ const char* mfunc::griewangkDesc()
  * @param n Size of the vector 'v'
  * @return The result of the mathematical function 
  */
-double mfunc::griewangk(double* v, size_t n)
+template <class T>
+T mfunc::griewangk(T* v, size_t n)
 {
-    double sum = 0.0;
-    double product = 0.0;
+    T sum = 0.0;
+    T product = 0.0;
 
     for (size_t i = 0; i < n; i++)
     {
@@ -225,15 +230,16 @@ const char* mfunc::sineEnvelopeSineWaveDesc()
  * @param n Size of the vector 'v'
  * @return The result of the mathematical function 
  */
-double mfunc::sineEnvelopeSineWave(double* v, size_t n)
+template <class T>
+T mfunc::sineEnvelopeSineWave(T* v, size_t n)
 {
-    double f = 0.0;
+    T f = 0.0;
 
     for (size_t i = 0; i < n - 1; i++)
     {
-        double a = sin(v[i]*v[i] + v[i+1]*v[i+1] - 0.5);
+        T a = sin(v[i]*v[i] + v[i+1]*v[i+1] - 0.5);
         a *= a;
-        double b = (1 + 0.001*(v[i]*v[i] + v[i+1]*v[i+1]));
+        T b = (1 + 0.001*(v[i]*v[i] + v[i+1]*v[i+1]));
         b *= b;
         f += 0.5 + (a / b);
     }
@@ -259,14 +265,15 @@ const char* mfunc::stretchedVSineWaveDesc()
  * @param n Size of the vector 'v'
  * @return The result of the mathematical function 
  */
-double mfunc::stretchedVSineWave(double* v, size_t n)
+template <class T>
+T mfunc::stretchedVSineWave(T* v, size_t n)
 {
-    double f = 0.0;
+    T f = 0.0;
 
     for (size_t i = 0; i < n - 1; i++)
     {
-        double a = nthroot(v[i]*v[i] + v[i+1]*v[i+1], 4.0);
-        double b = sin(50.0 * nthroot(v[i]*v[i] + v[i+1]*v[i+1], 10.0));
+        T a = nthroot(v[i]*v[i] + v[i+1]*v[i+1], 4.0);
+        T b = sin(50.0 * nthroot(v[i]*v[i] + v[i+1]*v[i+1], 10.0));
         b *= b;
         f += a * b + 1.0;
     }
@@ -292,14 +299,15 @@ const char* mfunc::ackleysOneDesc()
  * @param n Size of the vector 'v'
  * @return The result of the mathematical function 
  */
-double mfunc::ackleysOne(double* v, size_t n)
+template <class T>
+T mfunc::ackleysOne(T* v, size_t n)
 {
-    double f = 0.0;
+    T f = 0.0;
 
     for (size_t i = 0; i < n - 1; i++)
     {
-        double a = (1.0 / pow(M_E, 0.2)) * sqrt(v[i]*v[i] + v[i+1]*v[i+1]);
-        double b = 3.0 * (cos(2.0*v[i]) + sin(2.0*v[i+1]));
+        T a = (1.0 / pow(M_E, 0.2)) * sqrt(v[i]*v[i] + v[i+1]*v[i+1]);
+        T b = 3.0 * (cos(2.0*v[i]) + sin(2.0*v[i+1]));
         f += a + b;
     }
 
@@ -324,14 +332,15 @@ const char* mfunc::ackleysTwoDesc()
  * @param n Size of the vector 'v'
  * @return The result of the mathematical function 
  */
-double mfunc::ackleysTwo(double* v, size_t n)
+template <class T>
+T mfunc::ackleysTwo(T* v, size_t n)
 {
-    double f = 0.0;
+    T f = 0.0;
 
     for (size_t i = 0; i < n - 1; i++)
     {
-        double a = 20.0 / pow(M_E, 0.2 * sqrt((v[i]*v[i] + v[i+1]*v[i+1]) / 2.0));
-        double b = pow(M_E, 0.5 * (cos(2.0 * M_PI * v[i]) + cos(2.0 * M_PI * v[i+1])));
+        T a = 20.0 / pow(M_E, 0.2 * sqrt((v[i]*v[i] + v[i+1]*v[i+1]) / 2.0));
+        T b = pow(M_E, 0.5 * (cos(2.0 * M_PI * v[i]) + cos(2.0 * M_PI * v[i+1])));
         f += 20.0 + M_E - a - b;
     }
 
@@ -356,14 +365,15 @@ const char* mfunc::eggHolderDesc()
  * @param n Size of the vector 'v'
  * @return The result of the mathematical function 
  */
-double mfunc::eggHolder(double* v, size_t n)
+template <class T>
+T mfunc::eggHolder(T* v, size_t n)
 {
-    double f = 0.0;
+    T f = 0.0;
 
     for (size_t i = 0; i < n - 1; i++)
     {
-        double a = -1.0 * v[i] * sin(sqrt(fabs(v[i] - v[i+1] - 47.0)));
-        double b = (v[i+1] + 47) * sin(sqrt(fabs(v[i+1] + 47.0 + (v[i]/2.0))));
+        T a = -1.0 * v[i] * sin(sqrt(fabs(v[i] - v[i+1] - 47.0)));
+        T b = (v[i+1] + 47) * sin(sqrt(fabs(v[i+1] + 47.0 + (v[i]/2.0))));
         f += a - b;
     }
 
@@ -388,14 +398,15 @@ const char* mfunc::ranaDesc()
  * @param n Size of the vector 'v'
  * @return The result of the mathematical function 
  */
-double mfunc::rana(double* v, size_t n)
+template <class T>
+T mfunc::rana(T* v, size_t n)
 {
-    double f = 0.0;
+    T f = 0.0;
 
     for (size_t i = 0; i < n - 1; i++)
     {
-        double a = v[i] * sin(sqrt(fabs(v[i+1] - v[i] + 1.0))) * cos(sqrt(fabs(v[i+1] + v[i] + 1.0)));
-        double b = (v[i+1] + 1.0) * cos(sqrt(fabs(v[i+1] - v[i] + 1.0))) * sin(sqrt(fabs(v[i+1] + v[i] + 1.0)));
+        T a = v[i] * sin(sqrt(fabs(v[i+1] - v[i] + 1.0))) * cos(sqrt(fabs(v[i+1] + v[i] + 1.0)));
+        T b = (v[i+1] + 1.0) * cos(sqrt(fabs(v[i+1] - v[i] + 1.0))) * sin(sqrt(fabs(v[i+1] + v[i] + 1.0)));
         f += a + b;
     }
 
@@ -420,15 +431,16 @@ const char* mfunc::pathologicalDesc()
  * @param n Size of the vector 'v'
  * @return The result of the mathematical function 
  */
-double mfunc::pathological(double* v, size_t n)
+template <class T>
+T mfunc::pathological(T* v, size_t n)
 {
-    double f = 0.0;
+    T f = 0.0;
 
     for (size_t i = 0; i < n - 1; i++)
     {
-        double a = sin(sqrt(100.0*v[i]*v[i] + v[i+1]*v[i+1]));
+        T a = sin(sqrt(100.0*v[i]*v[i] + v[i+1]*v[i+1]));
         a = (a*a) - 0.5;
-        double b = (v[i]*v[i] - 2*v[i]*v[i+1] + v[i+1]*v[i+1]);
+        T b = (v[i]*v[i] - 2*v[i]*v[i+1] + v[i+1]*v[i+1]);
         b = 1.0 + 0.001 * b*b;
         f += 0.5 + (a/b);
     }
@@ -454,9 +466,10 @@ const char* mfunc::michalewiczDesc()
  * @param n Size of the vector 'v'
  * @return The result of the mathematical function 
  */
-double mfunc::michalewicz(double* v, size_t n)
+template <class T>
+T mfunc::michalewicz(T* v, size_t n)
 {
-    double f = 0.0;
+    T f = 0.0;
 
     for (size_t i = 0; i < n; i++)
     {
@@ -484,14 +497,15 @@ const char* mfunc::mastersCosineWaveDesc()
  * @param n Size of the vector 'v'
  * @return The result of the mathematical function 
  */
-double mfunc::mastersCosineWave(double* v, size_t n)
+template <class T>
+T mfunc::mastersCosineWave(T* v, size_t n)
 {
-    double f = 0.0;
+    T f = 0.0;
 
     for (size_t i = 0; i < n - 1; i++)
     {
-        double a = pow(M_E, (-1.0/8.0)*(v[i]*v[i] + v[i+1]*v[i+1] + 0.5*v[i+1]*v[i]));
-        double b = cos(4 * sqrt(v[i]*v[i] + v[i+1]*v[i+1] + 0.5*v[i]*v[i+1]));
+        T a = pow(M_E, (-1.0/8.0)*(v[i]*v[i] + v[i+1]*v[i+1] + 0.5*v[i+1]*v[i]));
+        T b = cos(4 * sqrt(v[i]*v[i] + v[i+1]*v[i+1] + 0.5*v[i]*v[i+1]));
         f += a * b;
     }
 
@@ -516,9 +530,10 @@ const char* mfunc::quarticDesc()
  * @param n Size of the vector 'v'
  * @return The result of the mathematical function 
  */
-double mfunc::quartic(double* v, size_t n)
+template <class T>
+T mfunc::quartic(T* v, size_t n)
 {
-    double f = 0.0;
+    T f = 0.0;
 
     for (size_t i = 0; i < n; i++)
     {
@@ -533,7 +548,8 @@ double mfunc::quartic(double* v, size_t n)
 /**
  * Helper math function used in levy()
  */
-inline double w(double x)
+template <class T>
+inline T w(T x)
 {
     return 1.0 + (x - 1.0) / 4.0;
 }
@@ -554,24 +570,25 @@ const char* mfunc::levyDesc()
  * @param n Size of the vector 'v'
  * @return The result of the mathematical function 
  */
-double mfunc::levy(double* v, size_t n)
+template <class T>
+T mfunc::levy(T* v, size_t n)
 {
-    double f = 0.0;
+    T f = 0.0;
 
     for (size_t i = 0; i < n - 1; i++)
     {
-        double a = w(v[i]) - 1.0;
+        T a = w<T>(v[i]) - 1.0;
         a *= a;
-        double b = sin(M_PI * w(v[i]) + 1.0);
+        T b = sin(M_PI * w<T>(v[i]) + 1.0);
         b *= b;
-        double c = w(v[n - 1]) - 1.0;
+        T c = w<T>(v[n - 1]) - 1.0;
         c *= c;
-        double d = sin(2.0 * M_PI * w(v[n - 1]));
+        T d = sin(2.0 * M_PI * w<T>(v[n - 1]));
         d *= d;
         f += a * (1.0 + 10.0 * b) + c * (1.0 + d);
     }
 
-    double e = sin(M_PI * w(v[0]));
+    T e = sin(M_PI * w<T>(v[0]));
     return e*e + f;
 }
 
@@ -593,13 +610,14 @@ const char* mfunc::stepDesc()
  * @param n Size of the vector 'v'
  * @return The result of the mathematical function 
  */
-double mfunc::step(double* v, size_t n)
+template <class T>
+T mfunc::step(T* v, size_t n)
 {
-    double f = 0.0;
+    T f = 0.0;
 
     for (size_t i = 0; i < n; i++)
     {
-        double a = fabs(v[i]) + 0.5;
+        T a = fabs(v[i]) + 0.5;
         f += a * a;
     }
 
@@ -624,9 +642,10 @@ const char* mfunc::alpineDesc()
  * @param n Size of the vector 'v'
  * @return The result of the mathematical function 
  */
-double mfunc::alpine(double* v, size_t n)
+template <class T>
+T mfunc::alpine(T* v, size_t n)
 {
-    double f = 0.0;
+    T f = 0.0;
 
     for (size_t i = 0; i < n; i++)
     {
@@ -648,63 +667,64 @@ double mfunc::alpine(double* v, size_t n)
  * @param outResult Output reference variable for the result of the mathematical function 
  * @return true if 'f' is a valid id and the function was ran. Otherwise false.
  */
-bool mfunc::fExec(unsigned int f, double* v, size_t n, double& outResult)
+template <class T>
+bool mfunc::fExec(unsigned int f, T* v, size_t n, T& outResult)
 {
     switch (f)
     {
         case 1:
-            outResult = schwefel(v, n);
+            outResult = schwefel<T>(v, n);
             return true;
         case 2:
-            outResult = dejong(v, n);
+            outResult = dejong<T>(v, n);
             return true;
         case 3:
-            outResult = rosenbrok(v, n);
+            outResult = rosenbrok<T>(v, n);
             return true;
         case 4:
-            outResult = rastrigin(v, n);
+            outResult = rastrigin<T>(v, n);
             return true;
         case 5:
-            outResult = griewangk(v, n);
+            outResult = griewangk<T>(v, n);
             return true;
         case 6:
-            outResult = sineEnvelopeSineWave(v, n);
+            outResult = sineEnvelopeSineWave<T>(v, n);
             return true;
         case 7:
-            outResult = stretchedVSineWave(v, n);
+            outResult = stretchedVSineWave<T>(v, n);
             return true;
         case 8:
-            outResult = ackleysOne(v, n);
+            outResult = ackleysOne<T>(v, n);
             return true;
         case 9:
-            outResult = ackleysTwo(v, n);
+            outResult = ackleysTwo<T>(v, n);
             return true;
         case 10:
-            outResult = eggHolder(v, n);
+            outResult = eggHolder<T>(v, n);
             return true;
         case 11:
-            outResult = rana(v, n);
+            outResult = rana<T>(v, n);
             return true;
         case 12:
-            outResult = pathological(v, n);
+            outResult = pathological<T>(v, n);
             return true;
         case 13:
-            outResult = michalewicz(v, n);
+            outResult = michalewicz<T>(v, n);
             return true;
         case 14:
-            outResult = mastersCosineWave(v, n);
+            outResult = mastersCosineWave<T>(v, n);
             return true;
         case 15:
-            outResult = quartic(v, n);
+            outResult = quartic<T>(v, n);
             return true;
         case 16:
-            outResult = levy(v, n);
+            outResult = levy<T>(v, n);
             return true;
         case 17:
-            outResult = step(v, n);
+            outResult = step<T>(v, n);
             return true;
         case 18:
-            outResult = alpine(v, n);
+            outResult = alpine<T>(v, n);
             return true;
         default:
             return false;
@@ -765,50 +785,54 @@ const char* mfunc::fDesc(unsigned int f)
     }
 }
 
-mfunc::mfuncPtr mfunc::fGet(unsigned int f)
+template <class T>
+mfunc::mfuncPtr<T> mfunc::fGet(unsigned int f)
 {
     switch (f)
     {
         case 1:
-            return mfunc::schwefel;
+            return mfunc::schwefel<T>;
         case 2:
-            return mfunc::dejong;
+            return mfunc::dejong<T>;
         case 3:
-            return mfunc::rosenbrok;
+            return mfunc::rosenbrok<T>;
         case 4:
-            return mfunc::rastrigin;
+            return mfunc::rastrigin<T>;
         case 5:
-            return mfunc::griewangk;
+            return mfunc::griewangk<T>;
         case 6:
-            return mfunc::sineEnvelopeSineWave;
+            return mfunc::sineEnvelopeSineWave<T>;
         case 7:
-            return mfunc::stretchedVSineWave;
+            return mfunc::stretchedVSineWave<T>;
         case 8:
-            return mfunc::ackleysOne;
+            return mfunc::ackleysOne<T>;
         case 9:
-            return mfunc::ackleysTwo;
+            return mfunc::ackleysTwo<T>;
         case 10:
-            return mfunc::eggHolder;
+            return mfunc::eggHolder<T>;
         case 11:
-            return mfunc::rana;
+            return mfunc::rana<T>;
         case 12:
-            return mfunc::pathological;
+            return mfunc::pathological<T>;
         case 13:
-            return mfunc::michalewicz;
+            return mfunc::michalewicz<T>;
         case 14:
-            return mfunc::mastersCosineWave;
+            return mfunc::mastersCosineWave<T>;
         case 15:
-            return mfunc::quartic;
+            return mfunc::quartic<T>;
         case 16:
-            return mfunc::levy;
+            return mfunc::levy<T>;
         case 17:
-            return mfunc::step;
+            return mfunc::step<T>;
         case 18:
-            return mfunc::alpine;
+            return mfunc::alpine<T>;
         default:
             return nullptr;
     }
 }
+
+template bool mfunc::fExec<double>(unsigned int f, double* v, size_t n, double& outResult);
+template mfunc::mfuncPtr<double> mfunc::fGet(unsigned int f);
 
 // =========================
 // End of mfunc.cpp

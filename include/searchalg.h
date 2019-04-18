@@ -19,12 +19,12 @@ namespace mdata
         double timeDiff;
         high_resolution_clock::time_point timer;
 
-        inline void startTimer()
+        void startTimer()
         {
             timer = high_resolution_clock::now();
         }
 
-        inline double stopTimer()
+        double stopTimer()
         {
             high_resolution_clock::time_point t_end = high_resolution_clock::now();
             return (double)duration_cast<nanoseconds>(t_end - timer).count() / 1000000.0;

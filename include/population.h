@@ -74,7 +74,7 @@ namespace mdata
 
             for (size_t i = 1; i < realSize; i++)
             {
-                vArr[i-1] = vOther[i-1];
+                vArr[i] = vOther[i-1];
             }
         }
 
@@ -91,6 +91,11 @@ namespace mdata
         // Copy constructor
         VectFitPair(const VectFitPair& other)
         {
+            dealloc();
+            realSize = 0;
+
+            if (other.realSize == 0) return;
+
             realSize = other.realSize;
             alloc(other.realSize);
             for (size_t i = 0; i < realSize; i++)
@@ -100,6 +105,11 @@ namespace mdata
         // Copy assignment
         VectFitPair& operator=(const VectFitPair& other)
         {
+            dealloc();
+            realSize = 0;
+
+            if (other.realSize == 0) return *this;
+
             realSize = other.realSize;
             alloc(other.realSize);
             for (size_t i = 0; i < realSize; i++)
@@ -135,7 +145,6 @@ namespace mdata
 
         void alloc(size_t size)
         {
-            dealloc();
             vArr = new T[size];
         }
 
@@ -171,12 +180,12 @@ namespace mdata
         bool setFitness(size_t popIndex, T (*f)(T*, size_t v));
 
         void storeBest();
-        VectFitPair<T>& getBest(size_t index);
+        // VectFitPair<T>& getBest(size_t index);
         void clearBest();
 
         T getFitnessValue(size_t popIndex);
         std::vector<T> getAllFitness();
-        std::vector<T> getAllBestFitness();
+        // std::vector<T> getAllBestFitness();
         T getFitnessAverage();
         T getFitnessStandardDev();
         T getFitnessRange();
@@ -190,7 +199,7 @@ namespace mdata
         
         T** popMatrix; /** Matrix of population values */
         T* popFitness; /** Array of fitness values */
-        std::vector<VectFitPair<T>> bestPop;
+        std::vector<T> bestPop;
 
         std::random_device rdev; /** Random seed for random number generator */
         std::mt19937 rgen; /** Mersenne twister random number generator engine */

@@ -179,17 +179,16 @@ void Population<T>::storeBest()
             bestIndex = i;
     }
 
-    VectFitPair<T> pair(popMatrix[bestIndex], popFitness[bestIndex], popDim);
-    bestPop.push_back(std::move(pair));
+    bestPop.push_back(popFitness[bestIndex]);
 }
 
-template<class T>
-VectFitPair<T>& Population<T>::getBest(size_t index)
-{
-    if (index >= bestPop.size()) throw std::out_of_range("Index out of range");
+// template<class T>
+// VectFitPair<T>& Population<T>::getBest(size_t index)
+// {
+//     if (index >= bestPop.size()) throw std::out_of_range("Index out of range");
 
-    return bestPop[index];
-}
+//     return bestPop[index];
+// }
 
 template<class T>
 void Population<T>::clearBest()
@@ -215,19 +214,19 @@ T Population<T>::getFitnessValue(size_t popIndex)
 template<class T>
 std::vector<T> Population<T>::getAllFitness()
 {
-    return std::move(std::vector<T>(popFitness[0], popFitness[popSize]));
+    return std::vector<T>(popFitness[0], popFitness[popSize]);
 }
 
-template<class T>
-std::vector<T> Population<T>::getAllBestFitness()
-{
-    std::vector<T> retVec(bestPop.size());
+// template<class T>
+// std::vector<T> Population<T>::getAllBestFitness()
+// {
+//     std::vector<T> retVec(bestPop.size());
 
-    for (size_t i = 0; i < bestPop.size(); i++)
-        retVec[i] = bestPop[i].fitness();
+//     for (size_t i = 0; i < bestPop.size(); i++)
+//         retVec[i] = bestPop[i].fitness();
 
-    return std::move(retVec);
-}
+//     return retVec;
+// }
 
 /**
  * @brief Calculates the average of all current fitness values.
