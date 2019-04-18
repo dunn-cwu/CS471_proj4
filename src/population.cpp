@@ -42,6 +42,7 @@ Population<T>::~Population()
 {
     releasePopMatrix();
     releasePopFitness();
+    bestPop.clear();
 }
 
 /**
@@ -94,6 +95,12 @@ T* Population<T>::getPopulation(size_t popIndex)
     if (popFitness == nullptr || popIndex >= popSize) return nullptr;
     
     return popMatrix[popIndex];
+}
+
+template <class T>
+size_t Population<T>::getBestSize()
+{
+    return bestPop.size();
 }
 
 /**
@@ -176,6 +183,20 @@ void Population<T>::storeBest()
     bestPop.push_back(std::move(pair));
 }
 
+template<class T>
+VectFitPair<T>& Population<T>::getBest(size_t index)
+{
+    if (index >= bestPop.size()) throw std::out_of_range("Index out of range");
+
+    return bestPop[index];
+}
+
+template<class T>
+void Population<T>::clearBest()
+{
+    bestPop.clear();
+}
+
 /**
  * @brief Returns the fitness value for a specific population vector index.
  * 
@@ -189,6 +210,23 @@ T Population<T>::getFitnessValue(size_t popIndex)
     if (popFitness == nullptr || popIndex >= popSize) return 0;
 
     return popFitness[popIndex];
+}
+
+template<class T>
+std::vector<T> Population<T>::getAllFitness()
+{
+    return std::move(std::vector<T>(popFitness[0], popFitness[popSize]));
+}
+
+template<class T>
+std::vector<T> Population<T>::getAllBestFitness()
+{
+    std::vector<T> retVec(bestPop.size());
+
+    for (size_t i = 0; i < bestPop.size(); i++)
+        retVec[i] = bestPop[i].fitness();
+
+    return std::move(retVec);
 }
 
 /**
@@ -354,7 +392,6 @@ void Population<T>::releasePopFitness()
 }
 
 template class mdata::Population<double>;
-template class mdata::Population<long>;
 
 // =========================
 // End of population.cpp

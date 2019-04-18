@@ -74,7 +74,7 @@ namespace mdata
         void setEntry(unsigned int row, unsigned int col, double val);
 
         bool exportCSV(const char* filePath);
-    protected:
+    private:
         unsigned int cols; /** Number of columns in the table. */
         unsigned int rows; /** Number of rows in the table. */
         std::vector<std::string> colLabels; /** Vector of column labels. Index n = Col n. */

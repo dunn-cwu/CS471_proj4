@@ -42,7 +42,7 @@ namespace mdata
             realSize = vSize + 1;
             alloc(realSize);
             vArr[0] = fitness;
-            copyVector(vector);
+            loadVector(vector);
         }
 
         ~VectFitPair()
@@ -68,7 +68,7 @@ namespace mdata
             return vArr[0];
         }
         
-        void copyVector(const T*& vOther)
+        void loadVector(const T*& vOther)
         {
             if (vArr == nullptr) return;
 
@@ -163,6 +163,7 @@ namespace mdata
         bool isReady();
         size_t getPopulationSize();
         size_t getDimensionsSize();
+        size_t getBestSize();
         T* getPopulation(size_t popIndex);
 
         bool generate(T minBound, T maxBound);
@@ -170,8 +171,12 @@ namespace mdata
         bool setFitness(size_t popIndex, T (*f)(T*, size_t v));
 
         void storeBest();
+        VectFitPair<T>& getBest(size_t index);
+        void clearBest();
 
         T getFitnessValue(size_t popIndex);
+        std::vector<T> getAllFitness();
+        std::vector<T> getAllBestFitness();
         T getFitnessAverage();
         T getFitnessStandardDev();
         T getFitnessRange();
@@ -179,7 +184,7 @@ namespace mdata
 
         void outputPopulation(std::ostream& outStream, const char* delim, const char* lineBreak);
         void outputFitness(std::ostream& outStream, const char* delim, const char* lineBreak);
-    protected:
+    private:
         const size_t popSize; /** Size of the population, and the number of rows in the popMatrix */
         const size_t popDim;  /** Dimensions of the population, and the number of columns in the popMatrix */
         

@@ -13,6 +13,7 @@
 #include "cs471.h"
 #include "datatable.h"
 #include "datastats.h"
+#include "blindsearch.h"
 #include "stringutils.h"
 #include "mem.h"
 #include <iostream>
@@ -168,7 +169,7 @@ int mfuncExperiment::runAllFunc()
 {
     if (populations == nullptr) return 1;
 
-    std::vector<std::future<TestResult>> testFutures;
+    std::vector<std::future<mdata::TestResult>> testFutures;
 
     // function desc. | average | standard dev. | range | median | time
     mdata::DataTable resultsTable(8);
@@ -204,7 +205,7 @@ int mfuncExperiment::runAllFunc()
     // Join and get all function return values from thread pool workers
     for (unsigned int f = 1; f <= mfunc::NUM_FUNCTIONS; f++)
     {
-        TestResult tRes = testFutures[f-1].get();
+        mdata::TestResult tRes = testFutures[f-1].get();
         if (tRes.err)
         {
             if (outputFitness) fitnessFile.close();
@@ -263,12 +264,12 @@ int mfuncExperiment::runAllFunc()
  * @param timeOut Out reference variable that the execution time in ms is set to.
  * @return Returns 0 on success. Returns a non-zero error code on failure.
  */
-TestResult mfuncExperiment::runFunc(unsigned int funcId)
+mdata::TestResult mfuncExperiment::runFunc(unsigned int funcId)
 {
-    if (!genFuncVectors(funcId)) return TestResult(1, 0.0);
+    if (!genFuncVectors(funcId)) return mdata::TestResult(1, 0.0);
 
     mfunc::mfuncPtr fPtr = mfunc::fGet(funcId);
-    if (fPtr == nullptr) return TestResult(2, 0.0);
+    if (fPtr == nullptr) return mdata::TestResult(2, 0.0);
 
     auto curPopObj = populations[funcId - 1];
     size_t nbrSol = curPopObj->getPopulationSize();
@@ -278,13 +279,13 @@ TestResult mfuncExperiment::runFunc(unsigned int funcId)
     for (int i = 0; i < nbrSol; i++)
     {
         if (!curPopObj->setFitness(i, fPtr))
-            return TestResult(4, 0.0);
+            return mdata::TestResult(4, 0.0);
     }
     
     high_resolution_clock::time_point t_end = high_resolution_clock::now();
     double execTime = (double)duration_cast<nanoseconds>(t_end - t_start).count() / 1000000.0;
 
-    return TestResult(0, execTime);
+    return mdata::TestResult(0, execTime);
 }
 
 /**

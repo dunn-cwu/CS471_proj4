@@ -21,6 +21,7 @@
 #include "inireader.h"
 #include "population.h"
 #include "threadpool.h"
+#include "testresult.h"
 
 #define DEFAULT_NUM_THREADS 1
 
@@ -35,16 +36,6 @@ namespace cs471
     {
         T min = 0.0;
         T max = 0.0;
-    };
-
-    struct TestResult
-    {
-        const int err;
-        const double execTime;
-
-        TestResult(int _err, double _execTime) : err(_err), execTime(_execTime)
-        {
-        }
     };
 
     /**
@@ -64,13 +55,14 @@ namespace cs471
         ~mfuncExperiment();
         bool init(const char* paramFile);
         int runAllFunc();
-        TestResult runFunc(unsigned int funcId);
+        mdata::TestResult runFunc(unsigned int funcId);
     private:
         util::IniReader iniParams; /** IniReader class instance for importing experiment parameters */
         std::string resultsFile;   /** The file path for the results output *.csv file */
         mdata::Population<double>** populations; /** Array of population objects that contain matrices and fitness arrays for each function */
         RandomBounds<double>* vBounds; /** An array of RandomBounds structs that holds the function bounds read from iniParams */
         ThreadPool* tPool;
+        size_t iterations;
         bool outputPop; /** If set to true, all population data will be exported to files */
         bool outputFitness; /** If set to true, all fitness data will be exported to files */
 

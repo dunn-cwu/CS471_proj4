@@ -51,7 +51,7 @@ namespace util
         bool sectionExists(std::string section);
         bool entryExists(std::string section, std::string entry);
         std::string getEntry(std::string section, std::string entry);
-    protected:
+    private:
         std::string file; /** The file path for the current ini file data. */
         std::map<std::string, std::map<std::string, std::string>> iniMap; /** The parsed ini file data. */
 
