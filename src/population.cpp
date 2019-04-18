@@ -151,6 +151,31 @@ bool Population<T>::setFitness(size_t popIndex, T value)
     return true;
 }
 
+template<class T>
+bool Population<T>::setFitness(size_t popIndex, T (*f)(T*, size_t v))
+{
+    if (popFitness == nullptr || popIndex >= popSize) return false;
+
+    popFitness[popIndex] = f(popMatrix[popIndex], popDim);
+
+    return true;
+}
+
+template<class T>
+void Population<T>::storeBest()
+{
+    size_t bestIndex = 0;
+
+    for (size_t i = 1; i < popSize; i++)
+    {
+        if (popFitness[i] < popFitness[bestIndex])
+            bestIndex = i;
+    }
+
+    VectFitPair<T> pair(popMatrix[bestIndex], popFitness[bestIndex], popDim);
+    bestPop.push_back(std::move(pair));
+}
+
 /**
  * @brief Returns the fitness value for a specific population vector index.
  * 

@@ -765,6 +765,51 @@ const char* mfunc::fDesc(unsigned int f)
     }
 }
 
+mfunc::mfuncPtr mfunc::fGet(unsigned int f)
+{
+    switch (f)
+    {
+        case 1:
+            return mfunc::schwefel;
+        case 2:
+            return mfunc::dejong;
+        case 3:
+            return mfunc::rosenbrok;
+        case 4:
+            return mfunc::rastrigin;
+        case 5:
+            return mfunc::griewangk;
+        case 6:
+            return mfunc::sineEnvelopeSineWave;
+        case 7:
+            return mfunc::stretchedVSineWave;
+        case 8:
+            return mfunc::ackleysOne;
+        case 9:
+            return mfunc::ackleysTwo;
+        case 10:
+            return mfunc::eggHolder;
+        case 11:
+            return mfunc::rana;
+        case 12:
+            return mfunc::pathological;
+        case 13:
+            return mfunc::michalewicz;
+        case 14:
+            return mfunc::mastersCosineWave;
+        case 15:
+            return mfunc::quartic;
+        case 16:
+            return mfunc::levy;
+        case 17:
+            return mfunc::step;
+        case 18:
+            return mfunc::alpine;
+        default:
+            return nullptr;
+    }
+}
+
 // =========================
 // End of mfunc.cpp
 // =========================

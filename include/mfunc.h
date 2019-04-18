@@ -20,6 +20,7 @@
 namespace mfunc
 {
     extern const unsigned int NUM_FUNCTIONS;
+    typedef double (*mfuncPtr)(double*, size_t);
 
     const char* schwefelDesc();
     double schwefel(double* v, size_t n);
@@ -77,6 +78,7 @@ namespace mfunc
 
     bool fExec(unsigned int f, double* v, size_t n, double& outResult);
     const char* fDesc(unsigned int f);
+    mfuncPtr fGet(unsigned int f);
 }
 
 #endif

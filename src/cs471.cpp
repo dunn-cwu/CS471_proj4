@@ -267,22 +267,18 @@ TestResult mfuncExperiment::runFunc(unsigned int funcId)
 {
     if (!genFuncVectors(funcId)) return TestResult(1, 0.0);
 
-    double fResult = 0;
+    mfunc::mfuncPtr fPtr = mfunc::fGet(funcId);
+    if (fPtr == nullptr) return TestResult(2, 0.0);
+
     auto curPopObj = populations[funcId - 1];
     size_t nbrSol = curPopObj->getPopulationSize();
-    size_t nbrDim = curPopObj->getDimensionsSize();
-    double* curPop = nullptr;
 
     high_resolution_clock::time_point t_start = high_resolution_clock::now();
 
     for (int i = 0; i < nbrSol; i++)
     {
-        curPop = curPopObj->getPopulation(i);
-        if (curPop == nullptr || !mfunc::fExec(funcId, curPop, nbrDim, fResult))
-            return TestResult(2, 0.0);
-
-        if (!curPopObj->setFitness(i, fResult))
-            return TestResult(3, 0.0);
+        if (!curPopObj->setFitness(i, fPtr))
+            return TestResult(4, 0.0);
     }
     
     high_resolution_clock::time_point t_end = high_resolution_clock::now();
