@@ -193,8 +193,8 @@ int Experiment<T>::testAllFunc()
         curParam.resultsCol = i;
         curParam.execTimesCol = i;
 
-        resultsTable.setColLabel((size_t)i, fDesc(curParam.funcId));
-        execTimesTable.setColLabel((size_t)i, fDesc(curParam.funcId));
+        resultsTable.setColLabel((size_t)i, FunctionDesc::get(curParam.funcId));
+        execTimesTable.setColLabel((size_t)i, FunctionDesc::get(curParam.funcId));
     }
 
     std::vector<std::future<int>> testFutures;
@@ -247,7 +247,6 @@ template<class T>
 int Experiment<T>::testFunc(mdata::TestParameters<T>* tParams)
 {
     mdata::Population<T>* pop = popPoolRemove();
-
     mdata::SearchAlgorithm<T>* alg;
 
     switch (tParams->alg)
@@ -268,7 +267,7 @@ int Experiment<T>::testFunc(mdata::TestParameters<T>* tParams)
 
     for (size_t i = 0; i < tParams->iterations; i++)
     {
-        auto result = alg->run(fGet<T>(tParams->funcId), funcBounds.min, funcBounds.max, pop, 0);
+        auto result = alg->run(Functions<T>::get(tParams->funcId), funcBounds.min, funcBounds.max, pop, 0);
         if (result.err) 
         {
             returnVal = result.err;
