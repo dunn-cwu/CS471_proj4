@@ -26,8 +26,8 @@
  * This source file has been modified by Andrew Dunn to add additional functions
  */
 
-#ifndef THREAD_POOL_H
-#define THREAD_POOL_H
+#ifndef __THREADPOOL_H
+#define __THREADPOOL_H
 
 #include <vector>
 #include <queue>

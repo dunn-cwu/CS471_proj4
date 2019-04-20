@@ -12,7 +12,6 @@
  */
 #include "population.h"
 #include "mem.h"
-#include "datastats.h"
 #include <new>
 
 using namespace mdata;
@@ -159,41 +158,13 @@ bool Population<T>::setFitness(size_t popIndex, T value)
 }
 
 template<class T>
-bool Population<T>::setFitness(size_t popIndex, T (*f)(T*, size_t v))
+bool Population<T>::calcFitness(size_t popIndex, mfunc::mfuncPtr<T> funcPtr)
 {
     if (popFitness == nullptr || popIndex >= popSize) return false;
 
-    popFitness[popIndex] = f(popMatrix[popIndex], popDim);
+    popFitness[popIndex] = funcPtr(popMatrix[popIndex], popDim);
 
     return true;
-}
-
-template<class T>
-void Population<T>::storeBest()
-{
-    size_t bestIndex = 0;
-
-    for (size_t i = 1; i < popSize; i++)
-    {
-        if (popFitness[i] < popFitness[bestIndex])
-            bestIndex = i;
-    }
-
-    bestPop.push_back(popFitness[bestIndex]);
-}
-
-// template<class T>
-// VectFitPair<T>& Population<T>::getBest(size_t index)
-// {
-//     if (index >= bestPop.size()) throw std::out_of_range("Index out of range");
-
-//     return bestPop[index];
-// }
-
-template<class T>
-void Population<T>::clearBest()
-{
-    bestPop.clear();
 }
 
 /**
@@ -204,7 +175,7 @@ void Population<T>::clearBest()
  * @return Returns the fitness value if popIndex is valid. Otherwise zero.
  */
 template<class T>
-T Population<T>::getFitnessValue(size_t popIndex)
+T Population<T>::getFitness(size_t popIndex)
 {
     if (popFitness == nullptr || popIndex >= popSize) return 0;
 
@@ -217,71 +188,18 @@ std::vector<T> Population<T>::getAllFitness()
     return std::vector<T>(popFitness[0], popFitness[popSize]);
 }
 
-// template<class T>
-// std::vector<T> Population<T>::getAllBestFitness()
-// {
-//     std::vector<T> retVec(bestPop.size());
-
-//     for (size_t i = 0; i < bestPop.size(); i++)
-//         retVec[i] = bestPop[i].fitness();
-
-//     return retVec;
-// }
-
-/**
- * @brief Calculates the average of all current fitness values.
- * 
- * @tparam T Data type of the population.
- * @return Returns the average of all current fitness values.
- */
 template<class T>
-T Population<T>::getFitnessAverage()
+T Population<T>::getBestFitness()
 {
-    if (popFitness == nullptr) return 0;
+    size_t bestIndex = 0;
 
-    return average<T>(popFitness, popSize);
-}
+    for (size_t i = 1; i < popSize; i++)
+    {
+        if (popFitness[i] < popFitness[bestIndex])
+            bestIndex = i;
+    }
 
-/**
- * @brief Calculates the standard deviation of all current fitness values.
- * 
- * @tparam T Data type of the population.
- * @return T Returns the standard deviation of all current fitness values.
- */
-template<class T>
-T Population<T>::getFitnessStandardDev()
-{
-    if (popFitness == nullptr) return 0;
-
-    return standardDeviation<T>(popFitness, popSize);
-}
-
-/**
- * @brief Calculates the range of all current fitness values.
- * 
- * @tparam T Data type of the population.
- * @return T Returns the range of all current fitness values.
- */
-template<class T>
-T Population<T>::getFitnessRange()
-{
-    if (popFitness == nullptr) return 0;
-
-    return range<T>(popFitness, popSize);
-}
-
-/**
- * @brief Calculates the median of all current fitness values.
- * 
- * @tparam T Data type of the population.
- * @return T Returns the median of all current fitness values.
- */
-template<class T>
-T Population<T>::getFitnessMedian()
-{
-    if (popFitness == nullptr) return 0;
-
-    return median<T>(popFitness, popSize);
+    return popFitness[bestIndex];
 }
 
 /**

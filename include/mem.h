@@ -9,6 +9,9 @@
  * 
  */
 
+#ifndef __MEM_H
+#define __MEM_H
+
 #include <new> // std::nothrow
 #include <cstddef> // size_t definition
 
@@ -134,6 +137,8 @@ namespace util
         return m;
     }
 }
+
+#endif
 
 // =========================
 // End of mem.h

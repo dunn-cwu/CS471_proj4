@@ -1,5 +1,5 @@
 /**
- * @file mfunc.cpp
+ * @file mfunctions.cpp
  * @author Andrew Dunn (Andrew.Dunn@cwu.edu)
  * @brief Implementations for various math functions defined in mfunc.h
  * @version 0.1
@@ -10,7 +10,7 @@
 
 #define _USE_MATH_DEFINES
 
-#include "mfunc.h"
+#include "mfunctions.h"
 #include <cmath>
 
 #define _schwefelDesc "Schwefel’s function"
@@ -835,5 +835,5 @@ template bool mfunc::fExec<double>(unsigned int f, double* v, size_t n, double& 
 template mfunc::mfuncPtr<double> mfunc::fGet(unsigned int f);
 
 // =========================
-// End of mfunc.cpp
+// End of mfunctions.cpp
 // =========================

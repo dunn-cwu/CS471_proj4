@@ -14,6 +14,7 @@
 #define __INIREADER_H
 
 #include <string>
+#include <sstream>
 #include <map>
 #include <iostream>
 #include <fstream>
@@ -51,6 +52,15 @@ namespace util
         bool sectionExists(std::string section);
         bool entryExists(std::string section, std::string entry);
         std::string getEntry(std::string section, std::string entry);
+
+        template <class T>
+        T getEntryAs(std::string section, std::string entry)
+        {
+            std::stringstream ss(getEntry(section, entry));
+            T retVal;
+            ss >> retVal;
+            return retVal;
+        }
     private:
         std::string file; /** The file path for the current ini file data. */
         std::map<std::string, std::map<std::string, std::string>> iniMap; /** The parsed ini file data. */

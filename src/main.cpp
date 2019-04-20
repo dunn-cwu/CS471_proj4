@@ -11,7 +11,7 @@
  */
 
 #include <iostream>
-#include "cs471.h"
+#include "experiment.h"
 
 using namespace std;
 
@@ -26,7 +26,7 @@ int main(int argc, char** argv)
    }
 
    // Create an instance of the project 1 experiment class
-   cs471::mfuncExperiment ex;
+   mfunc::Experiment<double> ex;
 
    cout << "Input parameters file: " << argv[1] << endl;
    cout << "Initializing experiment ..." << endl;
@@ -36,7 +36,7 @@ int main(int argc, char** argv)
       return EXIT_FAILURE;
 
    // Run experiment and return success code
-   return ex.runAllFunc();
+   return ex.testAllFunc();
 }
 
 // =========================

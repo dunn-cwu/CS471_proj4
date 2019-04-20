@@ -1,5 +1,5 @@
 /**
- * @file mfunc.h
+ * @file mfunctions.h
  * @author Andrew Dunn (Andrew.Dunn@cwu.edu)
  * @brief Contains various math function definitions
  * @version 0.1
@@ -9,10 +9,10 @@
  * 
  */
 
-#ifndef __MFUNC_H
-#define __MFUNC_H
+#ifndef __MFUNCIONS_H
+#define __MFUNCIONS_H
 
-#include <cstddef> // size_t definition
+#include "mfuncPtr.h"
 
 /**
  * Scope for all math functions
@@ -20,9 +20,6 @@
 namespace mfunc
 {
     extern const unsigned int NUM_FUNCTIONS;
-
-    template <class T>
-    using mfuncPtr = T (*)(T*, size_t);
 
     const char* schwefelDesc();
     const char* dejongDesc();
@@ -109,5 +106,5 @@ namespace mfunc
 #endif
 
 // =========================
-// End of mfunc.h
+// End of mfunctions.h
 // =========================

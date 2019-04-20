@@ -17,145 +17,10 @@
 #include <vector>
 #include <random>
 #include <ostream>
+#include "mfuncPtr.h"
 
 namespace mdata
 {
-    template<class T>
-    class VectFitPair
-    {
-    public:
-        VectFitPair() : vArr(nullptr), realSize(0) {}
-
-        VectFitPair(size_t vSize) : vArr(nullptr), realSize(0)
-        {
-            realSize = vSize + 1;
-            alloc(realSize);
-            init(0);
-        }
-
-        VectFitPair(const T* vector, size_t vSize) : VectFitPair(vector, 0, vSize)
-        {
-        }
-
-        VectFitPair(const T* vector, T fitness, size_t vSize) : vArr(nullptr), realSize(0)
-        {
-            realSize = vSize + 1;
-            alloc(realSize);
-            vArr[0] = fitness;
-            loadVector(vector);
-        }
-
-        ~VectFitPair()
-        {
-            dealloc();
-        }
-    
-        void init(T val = 0)
-        {
-            if (vArr == nullptr) return;
-
-            for (size_t i = 0; i < realSize; i++)
-                vArr[i] = val;
-        }
-
-        size_t vectorSize()
-        {
-            return realSize - 1;
-        }
-
-        T& fitness()
-        {
-            return vArr[0];
-        }
-        
-        void loadVector(const T*& vOther)
-        {
-            if (vArr == nullptr) return;
-
-            for (size_t i = 1; i < realSize; i++)
-            {
-                vArr[i] = vOther[i-1];
-            }
-        }
-
-        const T*& vector()
-        {
-            return &(vArr[1]);
-        }
-
-        T& operator[](const size_t& vectInd)
-        {
-            return vArr[vectInd + 1];
-        }
-
-        // Copy constructor
-        VectFitPair(const VectFitPair& other)
-        {
-            dealloc();
-            realSize = 0;
-
-            if (other.realSize == 0) return;
-
-            realSize = other.realSize;
-            alloc(other.realSize);
-            for (size_t i = 0; i < realSize; i++)
-                vArr[i] = other.vArr[i];
-        }
-
-        // Copy assignment
-        VectFitPair& operator=(const VectFitPair& other)
-        {
-            dealloc();
-            realSize = 0;
-
-            if (other.realSize == 0) return *this;
-
-            realSize = other.realSize;
-            alloc(other.realSize);
-            for (size_t i = 0; i < realSize; i++)
-                vArr[i] = other.vArr[i];
-
-            return *this;
-        }
-
-        // Move Constructor
-        VectFitPair(VectFitPair&& other)
-        {
-            dealloc();
-            realSize = other.realSize;
-            vArr = other.vArr;
-            other.vArr = nullptr;
-            other.realSize = 0;
-        }
-
-        // Move assignment
-        VectFitPair& operator=(VectFitPair&& other)
-        {
-            dealloc();
-            realSize = other.realSize;
-            vArr = other.vArr;
-            other.vArr = nullptr;
-            other.realSize = 0;
-
-            return *this;
-        }
-    private:
-        size_t realSize;
-        T* vArr;
-
-        void alloc(size_t size)
-        {
-            vArr = new T[size];
-        }
-
-        void dealloc()
-        {
-            if (vArr == nullptr) return;
-            delete[] vArr;
-            vArr = nullptr;
-        }
-    };
-
     /**
      * @brief Data class for storing a multi-dimensional population of data.
      * Includes fitness analysis functions.
@@ -177,19 +42,11 @@ namespace mdata
 
         bool generate(T minBound, T maxBound);
         bool setFitness(size_t popIndex, T value);
-        bool setFitness(size_t popIndex, T (*f)(T*, size_t v));
+        bool calcFitness(size_t popIndex, mfunc::mfuncPtr<T> funcPtr);
 
-        void storeBest();
-        // VectFitPair<T>& getBest(size_t index);
-        void clearBest();
-
-        T getFitnessValue(size_t popIndex);
+        T getFitness(size_t popIndex);
         std::vector<T> getAllFitness();
-        // std::vector<T> getAllBestFitness();
-        T getFitnessAverage();
-        T getFitnessStandardDev();
-        T getFitnessRange();
-        T getFitnessMedian();
+        T getBestFitness();
 
         void outputPopulation(std::ostream& outStream, const char* delim, const char* lineBreak);
         void outputFitness(std::ostream& outStream, const char* delim, const char* lineBreak);

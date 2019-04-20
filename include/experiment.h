@@ -17,15 +17,15 @@
 #include <random>
 #include <chrono>
 #include <vector>
-#include "mfunc.h"
+#include "mfunctions.h"
 #include "inireader.h"
 #include "population.h"
 #include "threadpool.h"
+#include "searchalg.h"
 #include "testresult.h"
+#include "testparam.h"
 
-#define DEFAULT_NUM_THREADS 1
-
-namespace cs471
+namespace mfunc
 {
     /**
      * @brief Simple struct for storing the minimum
@@ -48,32 +48,33 @@ namespace cs471
      * given number of dimensions and collects all results/data. This
      * data is then entered into a DataTable and exported as a *.csv file.
      */
-    class mfuncExperiment
+    template<class T>
+    class Experiment
     {
     public:
-        mfuncExperiment();
-        ~mfuncExperiment();
+        Experiment();
+        ~Experiment();
         bool init(const char* paramFile);
-        int runAllFunc();
-        mdata::TestResult runFunc(unsigned int funcId);
+        int testAllFunc();
+        int testFunc(mdata::TestParameters<T>* tParams);
     private:
+        std::mutex popPoolMutex;
         util::IniReader iniParams; /** IniReader class instance for importing experiment parameters */
+        std::vector<mdata::Population<T>*> populationsPool;
         std::string resultsFile;   /** The file path for the results output *.csv file */
-        mdata::Population<double>** populations; /** Array of population objects that contain matrices and fitness arrays for each function */
-        RandomBounds<double>* vBounds; /** An array of RandomBounds structs that holds the function bounds read from iniParams */
+        std::string execTimesFile;   /** The file path for the exec times output *.csv file */
+        RandomBounds<T>* vBounds; /** An array of RandomBounds structs that holds the function bounds read from iniParams */
         ThreadPool* tPool;
         size_t iterations;
-        bool outputPop; /** If set to true, all population data will be exported to files */
-        bool outputFitness; /** If set to true, all fitness data will be exported to files */
+        enums::Algorithm testAlg;
 
-        bool genFuncVectors(unsigned int funcId);
+        mdata::Population<T>* popPoolRemove();
+        void popPoolAdd(mdata::Population<T>* popPtr);
 
         bool parseFuncBounds();
 
-        void exportPop(unsigned int func);
-
-        bool allocatePopulations(size_t popSize, size_t dimensions);
-        void releasePopulations();
+        bool allocatePopulationPool(size_t count, size_t popSize, size_t dimensions);
+        void releasePopulationPool();
 
         bool allocateVBounds();
         void releaseVBounds();
@@ -86,5 +87,5 @@ namespace cs471
 #endif
 
 // =========================
-// End of proj1.h
+// End of experiment.h
 // =========================

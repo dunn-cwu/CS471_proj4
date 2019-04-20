@@ -13,9 +13,10 @@
 #ifndef __DATATABLE_H
 #define __DATATABLE_H
 
-#include <map>
 #include <vector>
 #include <string>
+#include <stdexcept>
+#include "mem.h"
 
 namespace mdata
 {
@@ -23,21 +24,13 @@ namespace mdata
      * @brief The DataTable class is a simple table of values with labeled columns.
      * 
      * --
-     * Initialize a DataTable object with a specified number of columns:
-     * DataTable table(n);
+     * Initialize a DataTable object with a specified number of rows and columns:
+     * DataTable table(rows, columns);
      * 
      * --
      * Set a column's label:
      * 
      * table.setColLabel(0, "Column 1");
-     * 
-     * --
-     * Add a row to the table:
-     * int rowIndex = table.addRow();
-     * 
-     * or
-     * 
-     * int rowIndex = table.addRow((std::vector<std::string>)dataVector);
      * 
      * --
      * Set an entry in the table:
@@ -52,33 +45,107 @@ namespace mdata
      * 
      * bool success = table.exportCSV("my_file.csv");
      */
+    template <class T>
     class DataTable
     {
     public:
-        DataTable(unsigned int cols);
-        ~DataTable();
+        DataTable(size_t _rows, size_t _cols) : rows(_rows), cols(_cols), dataMatrix(nullptr)
+        {
+            if (rows == 0)
+                throw std::length_error("Table rows must be greater than 0.");
+            else if (cols == 0)
+                throw std::length_error("Table columns must be greater than 0.");
+
+            dataMatrix = util::allocMatrix<T>(rows, cols);
+            if (dataMatrix == nullptr)
+                throw std::bad_alloc();
+
+            colLabels.resize(_cols, std::string());
+        }
+
+        ~DataTable()
+        {
+            util::releaseMatrix(dataMatrix, rows);
+        }
         
-        std::string getColLabel(unsigned int colIndex);
-        bool setColLabel(unsigned int colIndex, std::string newLabel);
+        std::string getColLabel(size_t colIndex)
+        {
+            if (colIndex >= colLabels.size())
+                throw std::out_of_range("Column index out of range");
 
-        unsigned int addRow();
-        unsigned int addRow(const std::vector<std::string>& rowData);
-        std::vector<std::string>& getRow(unsigned int row);
-        void setRow(unsigned int row, const std::vector<std::string>& rowData);
+            return colLabels[colIndex];
+        }
 
-        std::string getEntry(unsigned int row, unsigned int col);
-        void setEntry(unsigned int row, unsigned int col, std::string val);
-        void setEntry(unsigned int row, unsigned int col, int val);
-        void setEntry(unsigned int row, unsigned int col, long val);
-        void setEntry(unsigned int row, unsigned int col, float val);
-        void setEntry(unsigned int row, unsigned int col, double val);
+        void setColLabel(size_t colIndex, std::string newLabel)
+        {
+             if (colIndex >= colLabels.size())
+                throw std::out_of_range("Column index out of range");
 
-        bool exportCSV(const char* filePath);
+            colLabels[colIndex] = newLabel;
+        }
+
+        T getEntry(size_t row, size_t col)
+        {
+            if (dataMatrix == nullptr)
+                throw std::runtime_error("Data matrix not allocated");
+            if (row >= rows)
+                throw std::out_of_range("Table row out of range");
+            else if (col >= cols)
+                throw std::out_of_range("Table column out of range");
+
+            return dataMatrix[row][col];
+        }
+
+        void setEntry(size_t row, size_t col, T val)
+        {
+            if (dataMatrix == nullptr)
+                throw std::runtime_error("Data matrix not allocated");
+            if (row >= rows)
+                throw std::out_of_range("Table row out of range");
+            else if (col >= cols)
+                throw std::out_of_range("Table column out of range");
+
+            dataMatrix[row][col] = val;
+        }
+
+        bool exportCSV(const char* filePath)
+        {
+            if (dataMatrix == nullptr) return false;
+
+            using namespace std;
+            ofstream outFile;
+            outFile.open(filePath, ofstream::out | ofstream::trunc);
+            if (!outFile.good()) return false;
+
+            // Print column labels
+            for (unsigned int c = 0; c < cols; c++)
+            {
+                outFile << colLabels[c];
+                if (c < cols - 1) outFile << ",";
+            }
+
+            outFile << endl;
+
+            // Print data rows
+            for (unsigned int r = 0; r < rows; r++)
+            {
+                for (unsigned int c = 0; c < cols; c++)
+                {
+                    outFile << dataMatrix[r][c];
+                    if (c < cols - 1) outFile << ",";
+                }
+                outFile << endl;
+            }
+
+            outFile.close();
+            return true;
+        }
     private:
-        unsigned int cols; /** Number of columns in the table. */
-        unsigned int rows; /** Number of rows in the table. */
+        size_t rows; /** Number of rows in the table. */
+        size_t cols; /** Number of columns in the table. */
         std::vector<std::string> colLabels; /** Vector of column labels. Index n = Col n. */
-        std::map<unsigned int, std::vector<std::string>> tableData; /** Table data composed of a map of vectors. map[n] = row vector. map[n][m] = entry. */
+        T** dataMatrix;
+        
     };
 } // mdata
 
