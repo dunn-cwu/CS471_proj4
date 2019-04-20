@@ -45,6 +45,7 @@ namespace mdata
     {
     public:
         SearchAlgorithm() : timeDiff(0.0) {}
+        virtual ~SearchAlgorithm() = 0;
         virtual TestResult<T> run(mfunc::mfuncPtr<T> funcPtr, const T fMin, const T fMax, Population<T>* const pop, const T alpha) = 0;
     protected:
         double timeDiff;
@@ -62,5 +63,8 @@ namespace mdata
         }
     };
 }
+
+template<class T>
+mdata::SearchAlgorithm<T>::~SearchAlgorithm() { }
 
 #endif
