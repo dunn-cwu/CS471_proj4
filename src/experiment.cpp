@@ -13,6 +13,7 @@
 #include "experiment.h"
 #include "datatable.h"
 #include "blindsearch.h"
+#include "localsearch.h"
 #include "stringutils.h"
 #include "mem.h"
 #include <iostream>
@@ -24,6 +25,7 @@
 #define INI_TEST_DIMENSIONS "dimensions"
 #define INI_TEST_ITERATIONS "iterations"
 #define INI_TEST_NUMTHREADS "num_threads"
+#define INI_TEST_ALPHA "alpha"
 #define INI_TEST_ALGORITHM "algorithm"
 #define INI_TEST_RESULTSFILE "results_file"
 #define INI_TEST_EXECTIMESFILE "exec_times_file"
@@ -77,6 +79,7 @@ bool Experiment<T>::init(const char* paramFile)
         long numberDim = iniParams.getEntryAs<long>(INI_TEST_SECTION, INI_TEST_DIMENSIONS);
         long numberIter = iniParams.getEntryAs<long>(INI_TEST_SECTION, INI_TEST_ITERATIONS);
         long numberThreads = iniParams.getEntryAs<long>(INI_TEST_SECTION, INI_TEST_NUMTHREADS);
+        alpha = iniParams.getEntryAs<T>(INI_TEST_SECTION, INI_TEST_ALPHA);
         unsigned int selectedAlg = iniParams.getEntryAs<unsigned int>(INI_TEST_SECTION, INI_TEST_ALGORITHM);
         resultsFile = iniParams.getEntry(INI_TEST_SECTION, INI_TEST_RESULTSFILE);
         execTimesFile = iniParams.getEntry(INI_TEST_SECTION, INI_TEST_EXECTIMESFILE);
@@ -105,6 +108,12 @@ bool Experiment<T>::init(const char* paramFile)
                 << INI_TEST_NUMTHREADS << " entry missing or out of bounds: " << paramFile << endl;
             return false;
         }
+        else if (alpha == 0)
+        {
+            cerr << "Experiment init failed: Param file [test]->" 
+                << INI_TEST_ALPHA << " is missing or is equal to zero: " << paramFile << endl;
+            return false;
+        }
         else if (selectedAlg >= static_cast<unsigned int>(enums::Algorithm::Count))
         {
             cerr << "Experiment init failed: Param file [test]->" 
@@ -118,6 +127,7 @@ bool Experiment<T>::init(const char* paramFile)
         cout << "Population size: " << numberSol << endl;
         cout << "Dimensions: " << numberDim << endl;
         cout << "Iterations: " << iterations << endl;
+        cout << "Alpha value: " << alpha << endl;
         cout << "Algorithm: " << enums::AlgorithmNames::get(testAlg) << endl;
 
         // Allocate memory for vector * solutions matrix
@@ -222,9 +232,9 @@ int Experiment<T>::testAllFunc()
     }
 
     high_resolution_clock::time_point t_end = high_resolution_clock::now();
-    double totalExecTime = (double)duration_cast<nanoseconds>(t_end - t_start).count() / 1000000.0;
+    double totalExecTime = (double)duration_cast<nanoseconds>(t_end - t_start).count() / 1000000000.0;
 
-    cout << "Test finished. Total time: " << totalExecTime << " miliseconds." << endl;
+    cout << "Test finished. Total time: " << totalExecTime << " seconds." << endl;
 
     if (!resultsFile.empty())
     {
@@ -255,7 +265,7 @@ int Experiment<T>::testFunc(mdata::TestParameters<T>* tParams)
             alg = new mdata::BlindSearch<T>();
             break;
         case enums::Algorithm::LocalSearch:
-            alg = new mdata::BlindSearch<T>();
+            alg = new mdata::LocalSearch<T>();
             break;
         default:
             cerr << "Invalid algorithm selected." << endl;
@@ -267,7 +277,7 @@ int Experiment<T>::testFunc(mdata::TestParameters<T>* tParams)
 
     for (size_t i = 0; i < tParams->iterations; i++)
     {
-        auto result = alg->run(Functions<T>::get(tParams->funcId), funcBounds.min, funcBounds.max, pop, 0);
+        auto result = alg->run(Functions<T>::get(tParams->funcId), funcBounds.min, funcBounds.max, pop, alpha);
         if (result.err) 
         {
             returnVal = result.err;
@@ -277,6 +287,8 @@ int Experiment<T>::testFunc(mdata::TestParameters<T>* tParams)
         tParams->resultsTable->setEntry(i, tParams->resultsCol, result.fitness);
         tParams->execTimesTable->setEntry(i, tParams->execTimesCol, result.execTime);
     }
+
+    cout << "F" << tParams->funcId << " done." << endl << flush;
 
     delete alg;
     popPoolAdd(pop);
@@ -288,7 +300,7 @@ template<class T>
 mdata::Population<T>* Experiment<T>::popPoolRemove()
 {
     mdata::Population<T>* retPop = nullptr;
-    std::chrono::milliseconds waitTime(1);
+    std::chrono::microseconds waitTime(10);
 
     while (true)
     {
@@ -478,7 +490,9 @@ void Experiment<T>::releaseThreadPool()
     tPool = nullptr;
 }
 
+template class mfunc::Experiment<float>;
 template class mfunc::Experiment<double>;
+template class mfunc::Experiment<long double>;
 
 // =========================
 // End of proj1.cpp

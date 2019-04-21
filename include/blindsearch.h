@@ -30,7 +30,7 @@ namespace mdata
                     return TestResult<T>(2, 0, 0.0); // Invalid fitness index, return with error code 2
             }
 
-            return TestResult<T>(0, pop->getBestFitness(), stopTimer());
+            return TestResult<T>(0, *pop->getBestFitnessPtr(), stopTimer());
         }
     };
 }

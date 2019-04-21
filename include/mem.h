@@ -136,6 +136,21 @@ namespace util
 
         return m;
     }
+
+    /**
+     * @brief Copies the elements from one equal-sized array to another
+     * 
+     * @tparam Data type of the array
+     * @param src Source array from where the elements will be copied from
+     * @param dest Destination array from where the elements will be copied to
+     * @param size Number of elements in the array
+     */
+    template <class T = double>
+    inline void copyArray(T* src, T* dest, size_t size)
+    {
+        for (size_t i = 0; i < size; i++)
+            dest[i] = src[i];
+    }
 }
 
 #endif

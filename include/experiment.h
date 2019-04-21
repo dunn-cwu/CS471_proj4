@@ -66,6 +66,7 @@ namespace mfunc
         RandomBounds<T>* vBounds; /** An array of RandomBounds structs that holds the function bounds read from iniParams */
         ThreadPool* tPool;
         size_t iterations;
+        T alpha;
         enums::Algorithm testAlg;
 
         mdata::Population<T>* popPoolRemove();

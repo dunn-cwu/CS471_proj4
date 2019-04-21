@@ -37,16 +37,17 @@ namespace mdata
         bool isReady();
         size_t getPopulationSize();
         size_t getDimensionsSize();
-        size_t getBestSize();
-        T* getPopulation(size_t popIndex);
+        T* getPopulationPtr(size_t popIndex);
 
         bool generate(T minBound, T maxBound);
         bool setFitness(size_t popIndex, T value);
         bool calcFitness(size_t popIndex, mfunc::mfuncPtr<T> funcPtr);
 
         T getFitness(size_t popIndex);
+        T* getFitnessPtr(size_t popIndex);
         std::vector<T> getAllFitness();
-        T getBestFitness();
+        T* getBestFitnessPtr();
+        size_t getBestFitnessIndex();
 
         void outputPopulation(std::ostream& outStream, const char* delim, const char* lineBreak);
         void outputFitness(std::ostream& outStream, const char* delim, const char* lineBreak);
@@ -56,7 +57,6 @@ namespace mdata
         
         T** popMatrix; /** Matrix of population values */
         T* popFitness; /** Array of fitness values */
-        std::vector<T> bestPop;
 
         std::random_device rdev; /** Random seed for random number generator */
         std::mt19937 rgen; /** Mersenne twister random number generator engine */

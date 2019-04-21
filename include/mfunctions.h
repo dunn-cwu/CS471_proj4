@@ -124,7 +124,7 @@ namespace mfunc
         static T alpine(T* v, size_t n);
         static mfuncPtr<T> get(unsigned int f);
         static bool exec(unsigned int f, T* v, size_t n, T& outResult);
-        static double nthroot(double x, double n);
+        static T nthroot(T x, T n);
         static T w(T x);
     };
 }
@@ -136,9 +136,9 @@ namespace mfunc
  * @return The value of the nth-root of x
  */
 template <class T>
-double mfunc::Functions<T>::nthroot(double x, double n)
+T mfunc::Functions<T>::nthroot(T x, T n)
 {
-    return pow(x, 1.0 / n);
+    return pow(x, static_cast<T>(1.0) / n);
 }
 
 // ================================================

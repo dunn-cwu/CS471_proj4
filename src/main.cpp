@@ -11,9 +11,27 @@
  */
 
 #include <iostream>
+#include <sstream>
 #include "experiment.h"
 
 using namespace std;
+
+template<class T>
+int runExp(const char* paramFile)
+{
+   // Create an instance of the project 1 experiment class
+   mfunc::Experiment<T> ex;
+
+   cout << "Datatype size: " << sizeof(T) << endl;
+   cout << "Input parameters file: " << paramFile << endl;
+   cout << "Initializing experiment ..." << endl;
+
+   // If experiment initialization fails, return failure
+   if (!ex.init(paramFile))
+      return EXIT_FAILURE;
+   else
+      return ex.testAllFunc();
+}
 
 int main(int argc, char** argv) 
 {
@@ -25,18 +43,33 @@ int main(int argc, char** argv)
       return EXIT_FAILURE;
    }
 
-   // Create an instance of the project 1 experiment class
-   mfunc::Experiment<double> ex;
+   int dataType = 1;
 
-   cout << "Input parameters file: " << argv[1] << endl;
-   cout << "Initializing experiment ..." << endl;
+   if (argc > 2)
+   {
+      std::stringstream ss(argv[2]);
+      ss >> dataType;
+      if (!ss) dataType = 1;
+   }
 
-   // If experiment initialization fails, return failure
-   if (!ex.init(argv[1]))
-      return EXIT_FAILURE;
+   if (dataType < 0 || dataType > 2)
+   {
+      cout << dataType << " is not a valid data type index. Value must be between 0 and 2." << endl;
+      dataType = 1;
+   }
 
    // Run experiment and return success code
-   return ex.testAllFunc();
+   switch (dataType)
+   {
+      case 0:
+         return runExp<float>(argv[1]);
+      case 1:
+         return runExp<double>(argv[1]);
+      case 2:
+         return runExp<long double>(argv[1]);
+      default:
+         return EXIT_FAILURE;
+   }
 }
 
 // =========================

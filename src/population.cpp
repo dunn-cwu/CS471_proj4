@@ -41,7 +41,6 @@ Population<T>::~Population()
 {
     releasePopMatrix();
     releasePopFitness();
-    bestPop.clear();
 }
 
 /**
@@ -89,17 +88,11 @@ size_t Population<T>::getDimensionsSize()
  * @return Pointer to population vector array at the given index.
  */
 template <class T>
-T* Population<T>::getPopulation(size_t popIndex)
+T* Population<T>::getPopulationPtr(size_t popIndex)
 {
     if (popFitness == nullptr || popIndex >= popSize) return nullptr;
     
     return popMatrix[popIndex];
-}
-
-template <class T>
-size_t Population<T>::getBestSize()
-{
-    return bestPop.size();
 }
 
 /**
@@ -182,6 +175,21 @@ T Population<T>::getFitness(size_t popIndex)
     return popFitness[popIndex];
 }
 
+/**
+ * @brief Returns the fitness value for a specific population vector index.
+ * 
+ * @tparam T Data type of the population.
+ * @param popIndex Index of the population vector you wish to retrieve the fitness from.
+ * @return Returns the fitness value if popIndex is valid. Otherwise zero.
+ */
+template<class T>
+T* Population<T>::getFitnessPtr(size_t popIndex)
+{
+    if (popFitness == nullptr || popIndex >= popSize) return 0;
+
+    return &popFitness[popIndex];
+}
+
 template<class T>
 std::vector<T> Population<T>::getAllFitness()
 {
@@ -189,7 +197,13 @@ std::vector<T> Population<T>::getAllFitness()
 }
 
 template<class T>
-T Population<T>::getBestFitness()
+T* Population<T>::getBestFitnessPtr()
+{
+    return &popFitness[getBestFitnessIndex()];
+}
+
+template<class T>
+size_t Population<T>::getBestFitnessIndex()
 {
     size_t bestIndex = 0;
 
@@ -199,7 +213,7 @@ T Population<T>::getBestFitness()
             bestIndex = i;
     }
 
-    return popFitness[bestIndex];
+    return bestIndex;
 }
 
 /**
@@ -308,7 +322,9 @@ void Population<T>::releasePopFitness()
     releaseArray<T>(popFitness);
 }
 
+template class mdata::Population<float>;
 template class mdata::Population<double>;
+template class mdata::Population<long double>;
 
 // =========================
 // End of population.cpp
