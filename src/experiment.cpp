@@ -39,7 +39,7 @@ using namespace mfunc;
  */
 template<class T>
 Experiment<T>::Experiment() 
-    : vBounds(nullptr), tPool(nullptr), resultsFile(""), execTimesFile(""), iterations(0)
+    : vBounds(nullptr), tPool(nullptr), resultsFile(""), execTimesFile(""), iterations(0), threadMode(enums::ThreadingMode::ByFunctionIteration)
 {
 }
 
@@ -207,30 +207,46 @@ int Experiment<T>::testAllFunc()
         execTimesTable.setColLabel((size_t)i, FunctionDesc::get(curParam.funcId));
     }
 
-    std::vector<std::future<int>> testFutures;
-
     high_resolution_clock::time_point t_start = high_resolution_clock::now();
 
-    // Queue all functions to be ran by our thread pool
-    for (unsigned int f = 1; f <= NUM_FUNCTIONS; f++)
+    if (threadMode == enums::ThreadingMode::ByFunction)
     {
-        testFutures.emplace_back(
-            tPool->enqueue(&Experiment::testFunc, this, &tParams[f - 1])
-        );
-    }
+        std::vector<std::future<int>> testFutures;
 
-    // Join and get all function return values from thread pool workers
-    for (unsigned int f = 1; f <= NUM_FUNCTIONS; f++)
-    {
-        int errCode = testFutures[f-1].get();
-        if (errCode)
+        // Queue all functions to be ran by our thread pool
+        for (unsigned int f = 1; f <= NUM_FUNCTIONS; f++)
         {
-            cerr << "Error occurred while testing function " << f << endl;
-            return errCode;
+            testFutures.emplace_back(
+                tPool->enqueue(&Experiment::testFunc, this, &tParams[f - 1])
+            );
         }
-        
-    }
 
+        // Join and get all function return values from thread pool workers
+        for (unsigned int f = 1; f <= NUM_FUNCTIONS; f++)
+        {
+            int errCode = testFutures[f-1].get();
+            if (errCode)
+            {
+                tPool->stopAndJoinAll();
+                cerr << "Error occurred while testing function " << f << endl;
+                return errCode;
+            }
+            
+        }
+    }
+    else
+    {
+        for (unsigned int f = 1; f <= NUM_FUNCTIONS; f++)
+        {
+            int errCode = testFuncThreaded(&tParams[f - 1]);
+            if (errCode)
+            {
+                cerr << "Error occurred while testing function " << f << endl;
+                return errCode;
+            }
+        }
+    }
+    
     high_resolution_clock::time_point t_end = high_resolution_clock::now();
     double totalExecTime = (double)duration_cast<nanoseconds>(t_end - t_start).count() / 1000000000.0;
 
@@ -294,6 +310,66 @@ int Experiment<T>::testFunc(mdata::TestParameters<T>* tParams)
     popPoolAdd(pop);
 
     return returnVal;
+}
+
+template<class T>
+int Experiment<T>::testFuncThreaded(mdata::TestParameters<T>* tParams)
+{
+    mdata::SearchAlgorithm<T>* alg;
+
+    switch (tParams->alg)
+    {
+        case enums::Algorithm::BlindSearch:
+            alg = new mdata::BlindSearch<T>();
+            break;
+        case enums::Algorithm::LocalSearch:
+            alg = new mdata::LocalSearch<T>();
+            break;
+        default:
+            cerr << "Invalid algorithm selected." << endl;
+            return 1;
+    }
+
+    std::vector<std::future<mdata::TestResult<T>>> testFutures;
+    
+    int returnVal = 0;
+
+    for (size_t i = 0; i < tParams->iterations; i++)
+    {
+        testFutures.emplace_back(
+            tPool->enqueue(&Experiment<T>::asyncAlgIteration, this, tParams, alg)
+        );
+    }
+
+    for (size_t i = 0; i < tParams->iterations; i++)
+    {
+        auto tResult = testFutures[i].get();
+        if (tResult.err)
+        {
+            tPool->stopAndJoinAll();
+            return tResult.err;
+        }
+
+        tParams->resultsTable->setEntry(i, tParams->resultsCol, tResult.fitness);
+        tParams->execTimesTable->setEntry(i, tParams->execTimesCol, tResult.execTime);
+    }
+
+    cout << "F" << tParams->funcId << " done." << endl << flush;
+
+    delete alg;
+
+    return returnVal;
+}
+
+template<class T>
+mdata::TestResult<T> Experiment<T>::asyncAlgIteration(mdata::TestParameters<T>* tParams, mdata::SearchAlgorithm<T>* alg)
+{
+    mdata::Population<T>* pop = popPoolRemove();
+    RandomBounds<T>& funcBounds = vBounds[tParams->funcId - 1];
+
+    auto result = alg->run(Functions<T>::get(tParams->funcId), funcBounds.min, funcBounds.max, pop, alpha);
+    popPoolAdd(pop);
+    return result;
 }
 
 template<class T>
