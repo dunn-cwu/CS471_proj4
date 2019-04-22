@@ -15,7 +15,7 @@
 #define _USE_MATH_DEFINES
 
 #include <cmath>
-#include "mfuncPtr.h"
+#include "mfuncptr.h"
 
 #define _schwefelDesc "Schwefel’s function"
 #define _dejongDesc "1st De Jong’s function"
@@ -157,10 +157,10 @@ T mfunc::Functions<T>::schwefel(T* v, size_t n)
 
     for (size_t i = 0; i < n; i++)
     {
-        f += (-1.0 * v[i]) * sin(sqrt(fabs(v[i])));
+        f += (static_cast<T>(-1.0) * v[i]) * sin(sqrt(std::abs(v[i])));
     }
 
-    return (418.9829 * n) - f;
+    return (static_cast<T>(418.9829) * static_cast<T>(n)) - f;
 }
 
 // ================================================
@@ -202,8 +202,8 @@ T mfunc::Functions<T>::rosenbrok(T* v, size_t n)
     for (size_t i = 0; i < n - 1; i++)
     {
         T a = ((v[i] * v[i]) - v[i+1]);
-        T b = (1.0 - v[i]);
-        f += 100.0 * a * a;
+        T b = (static_cast<T>(1.0) - v[i]);
+        f += static_cast<T>(100.0) * a * a;
         f += b * b;
     }
 
@@ -226,10 +226,10 @@ T mfunc::Functions<T>::rastrigin(T* v, size_t n)
 
     for (size_t i = 0; i < n; i++)
     {
-        f += (v[i] * v[i]) - (10.0 * cos(2.0 * M_PI * v[i]));
+        f += (v[i] * v[i]) - (static_cast<T>(10.0) * cos(static_cast<T>(2.0) * static_cast<T>(M_PI) * v[i]));
     }
 
-    return 10.0 * n * f;
+    return static_cast<T>(10.0) * static_cast<T>(n) * f;
 }
 
 // ================================================
@@ -249,15 +249,15 @@ T mfunc::Functions<T>::griewangk(T* v, size_t n)
 
     for (size_t i = 0; i < n; i++)
     {
-        sum += (v[i] * v[i]) / 4000.0;
+        sum += (v[i] * v[i]) / static_cast<T>(4000.0);
     }
 
     for (size_t i = 0; i < n; i++)
     {
-        product *= cos(v[i] / sqrt(i + 1.0));
+        product *= cos(v[i] / sqrt(static_cast<T>(i + 1.0)));
     }
 
-    return 1.0 + sum - product;
+    return static_cast<T>(1.0) + sum - product;
 }
 
 // ================================================
@@ -276,14 +276,14 @@ T mfunc::Functions<T>::sineEnvelopeSineWave(T* v, size_t n)
 
     for (size_t i = 0; i < n - 1; i++)
     {
-        T a = sin(v[i]*v[i] + v[i+1]*v[i+1] - 0.5);
+        T a = sin(v[i]*v[i] + v[i+1]*v[i+1] - static_cast<T>(0.5));
         a *= a;
-        T b = (1 + 0.001*(v[i]*v[i] + v[i+1]*v[i+1]));
+        T b = (static_cast<T>(1.0) + static_cast<T>(0.001)*(v[i]*v[i] + v[i+1]*v[i+1]));
         b *= b;
-        f += 0.5 + (a / b);
+        f += static_cast<T>(0.5) + (a / b);
     }
 
-    return -1.0 * f;
+    return static_cast<T>(-1.0) * f;
 }
 
 // ================================================
@@ -302,10 +302,10 @@ T mfunc::Functions<T>::stretchedVSineWave(T* v, size_t n)
 
     for (size_t i = 0; i < n - 1; i++)
     {
-        T a = nthroot(v[i]*v[i] + v[i+1]*v[i+1], 4.0);
-        T b = sin(50.0 * nthroot(v[i]*v[i] + v[i+1]*v[i+1], 10.0));
+        T a = nthroot(v[i]*v[i] + v[i+1]*v[i+1], static_cast<T>(4.0));
+        T b = sin(static_cast<T>(50.0) * nthroot(v[i]*v[i] + v[i+1]*v[i+1], static_cast<T>(10.0)));
         b *= b;
-        f += a * b + 1.0;
+        f += a * b + static_cast<T>(1.0);
     }
 
     return f;
@@ -327,8 +327,8 @@ T mfunc::Functions<T>::ackleysOne(T* v, size_t n)
 
     for (size_t i = 0; i < n - 1; i++)
     {
-        T a = (1.0 / pow(M_E, 0.2)) * sqrt(v[i]*v[i] + v[i+1]*v[i+1]);
-        T b = 3.0 * (cos(2.0*v[i]) + sin(2.0*v[i+1]));
+        T a = (static_cast<T>(1.0) / pow(static_cast<T>(M_E), static_cast<T>(0.2))) * sqrt(v[i]*v[i] + v[i+1]*v[i+1]);
+        T b = static_cast<T>(3.0) * (cos(static_cast<T>(2.0) * v[i]) + sin(static_cast<T>(2.0) * v[i+1]));
         f += a + b;
     }
 
@@ -351,9 +351,10 @@ T mfunc::Functions<T>::ackleysTwo(T* v, size_t n)
 
     for (size_t i = 0; i < n - 1; i++)
     {
-        T a = 20.0 / pow(M_E, 0.2 * sqrt((v[i]*v[i] + v[i+1]*v[i+1]) / 2.0));
-        T b = pow(M_E, 0.5 * (cos(2.0 * M_PI * v[i]) + cos(2.0 * M_PI * v[i+1])));
-        f += 20.0 + M_E - a - b;
+        T a = static_cast<T>(20.0) / pow(static_cast<T>(M_E), static_cast<T>(0.2) * sqrt((v[i]*v[i] + v[i+1]*v[i+1]) / static_cast<T>(2.0)));
+        T b = pow(static_cast<T>(M_E), static_cast<T>(0.5) * 
+            (cos(static_cast<T>(2.0) * static_cast<T>(M_PI) * v[i]) + cos(static_cast<T>(2.0) * static_cast<T>(M_PI) * v[i+1])));
+        f += static_cast<T>(20.0) + static_cast<T>(M_E) - a - b;
     }
 
     return f;
@@ -375,8 +376,8 @@ T mfunc::Functions<T>::eggHolder(T* v, size_t n)
 
     for (size_t i = 0; i < n - 1; i++)
     {
-        T a = -1.0 * v[i] * sin(sqrt(fabs(v[i] - v[i+1] - 47.0)));
-        T b = (v[i+1] + 47) * sin(sqrt(fabs(v[i+1] + 47.0 + (v[i]/2.0))));
+        T a = static_cast<T>(-1.0) * v[i] * sin(sqrt(std::abs(v[i] - v[i+1] - static_cast<T>(47.0))));
+        T b = (v[i+1] + static_cast<T>(47)) * sin(sqrt(std::abs(v[i+1] + static_cast<T>(47.0) + (v[i]/static_cast<T>(2.0)))));
         f += a - b;
     }
 
@@ -399,8 +400,8 @@ T mfunc::Functions<T>::rana(T* v, size_t n)
 
     for (size_t i = 0; i < n - 1; i++)
     {
-        T a = v[i] * sin(sqrt(fabs(v[i+1] - v[i] + 1.0))) * cos(sqrt(fabs(v[i+1] + v[i] + 1.0)));
-        T b = (v[i+1] + 1.0) * cos(sqrt(fabs(v[i+1] - v[i] + 1.0))) * sin(sqrt(fabs(v[i+1] + v[i] + 1.0)));
+        T a = v[i] * sin(sqrt(std::abs(v[i+1] - v[i] + static_cast<T>(1.0)))) * cos(sqrt(std::abs(v[i+1] + v[i] + static_cast<T>(1.0))));
+        T b = (v[i+1] + static_cast<T>(1.0)) * cos(sqrt(std::abs(v[i+1] - v[i] + static_cast<T>(1.0)))) * sin(sqrt(std::abs(v[i+1] + v[i] + static_cast<T>(1.0))));
         f += a + b;
     }
 
@@ -423,11 +424,11 @@ T mfunc::Functions<T>::pathological(T* v, size_t n)
 
     for (size_t i = 0; i < n - 1; i++)
     {
-        T a = sin(sqrt(100.0*v[i]*v[i] + v[i+1]*v[i+1]));
-        a = (a*a) - 0.5;
-        T b = (v[i]*v[i] - 2*v[i]*v[i+1] + v[i+1]*v[i+1]);
-        b = 1.0 + 0.001 * b*b;
-        f += 0.5 + (a/b);
+        T a = sin(sqrt(static_cast<T>(100.0)*v[i]*v[i] + v[i+1]*v[i+1]));
+        a = (a*a) - static_cast<T>(0.5);
+        T b = (v[i]*v[i] - static_cast<T>(2)*v[i]*v[i+1] + v[i+1]*v[i+1]);
+        b = static_cast<T>(1.0) + static_cast<T>(0.001) * b*b;
+        f += static_cast<T>(0.5) + (a/b);
     }
 
     return f;
@@ -449,7 +450,7 @@ T mfunc::Functions<T>::michalewicz(T* v, size_t n)
 
     for (size_t i = 0; i < n; i++)
     {
-        f += sin(v[i]) * pow(sin(((i+1) * v[i] * v[i]) / M_PI), 20);
+        f += sin(v[i]) * pow(sin(((i+1) * v[i] * v[i]) / static_cast<T>(M_PI)), static_cast<T>(20));
     }
 
     return -1.0 * f;
@@ -471,12 +472,12 @@ T mfunc::Functions<T>::mastersCosineWave(T* v, size_t n)
 
     for (size_t i = 0; i < n - 1; i++)
     {
-        T a = pow(M_E, (-1.0/8.0)*(v[i]*v[i] + v[i+1]*v[i+1] + 0.5*v[i+1]*v[i]));
-        T b = cos(4 * sqrt(v[i]*v[i] + v[i+1]*v[i+1] + 0.5*v[i]*v[i+1]));
+        T a = pow(M_E, static_cast<T>(-1.0/8.0)*(v[i]*v[i] + v[i+1]*v[i+1] + static_cast<T>(0.5)*v[i+1]*v[i]));
+        T b = cos(static_cast<T>(4) * sqrt(v[i]*v[i] + v[i+1]*v[i+1] + static_cast<T>(0.5)*v[i]*v[i+1]));
         f += a * b;
     }
 
-    return -1.0 * f;
+    return static_cast<T>(-1.0) * f;
 }
 
 // ================================================
@@ -509,7 +510,7 @@ T mfunc::Functions<T>::quartic(T* v, size_t n)
 template <class T>
 T  mfunc::Functions<T>::w(T x)
 {
-    return 1.0 + (x - 1.0) / 4.0;
+    return static_cast<T>(1.0) + (x - static_cast<T>(1.0)) / static_cast<T>(4.0);
 }
 
 /**
@@ -526,18 +527,18 @@ T mfunc::Functions<T>::levy(T* v, size_t n)
 
     for (size_t i = 0; i < n - 1; i++)
     {
-        T a = w(v[i]) - 1.0;
+        T a = w(v[i]) - static_cast<T>(1.0);
         a *= a;
-        T b = sin(M_PI * w(v[i]) + 1.0);
+        T b = sin(static_cast<T>(M_PI) * w(v[i]) + static_cast<T>(1.0));
         b *= b;
-        T c = w(v[n - 1]) - 1.0;
+        T c = w(v[n - 1]) - static_cast<T>(1.0);
         c *= c;
-        T d = sin(2.0 * M_PI * w(v[n - 1]));
+        T d = sin(static_cast<T>(2.0) * static_cast<T>(M_PI) * w(v[n - 1]));
         d *= d;
-        f += a * (1.0 + 10.0 * b) + c * (1.0 + d);
+        f += a * (static_cast<T>(1.0) + static_cast<T>(10.0) * b) + c * (static_cast<T>(1.0) + d);
     }
 
-    T e = sin(M_PI * w(v[0]));
+    T e = sin(static_cast<T>(M_PI) * w(v[0]));
     return e*e + f;
 }
 
@@ -557,7 +558,7 @@ T mfunc::Functions<T>::step(T* v, size_t n)
 
     for (size_t i = 0; i < n; i++)
     {
-        T a = fabs(v[i]) + 0.5;
+        T a = std::abs(v[i]) + static_cast<T>(0.5);
         f += a * a;
     }
 
@@ -580,7 +581,7 @@ T mfunc::Functions<T>::alpine(T* v, size_t n)
 
     for (size_t i = 0; i < n; i++)
     {
-        f += fabs(v[i] * sin(v[i]) + 0.1*v[i]);
+        f += std::abs(v[i] * sin(v[i]) + static_cast<T>(0.1)*v[i]);
     }
 
     return f;

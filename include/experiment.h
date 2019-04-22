@@ -66,8 +66,7 @@ namespace mfunc
         ~Experiment();
         bool init(const char* paramFile);
         int testAllFunc();
-        int testFunc(mdata::TestParameters<T>* tParams);
-        int testFuncThreaded(mdata::TestParameters<T>* tParams);
+        int testFuncThreaded(mdata::TestParameters<T> tParams);
     private:
         std::mutex popPoolMutex;
         util::IniReader iniParams; /** IniReader class instance for importing experiment parameters */
@@ -79,9 +78,7 @@ namespace mfunc
         size_t iterations;
         T alpha;
         enums::Algorithm testAlg;
-        enums::ThreadingMode threadMode;
 
-        mdata::TestResult<T> asyncAlgIteration(mdata::TestParameters<T>* tParams, mdata::SearchAlgorithm<T>* alg);
         mdata::Population<T>* popPoolRemove();
         void popPoolAdd(mdata::Population<T>* popPtr);
 

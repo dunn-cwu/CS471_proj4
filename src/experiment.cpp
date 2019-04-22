@@ -10,14 +10,15 @@
  * 
  */
 
+#include <iostream>
+#include <fstream>
+#include <iomanip>
 #include "experiment.h"
 #include "datatable.h"
 #include "blindsearch.h"
 #include "localsearch.h"
 #include "stringutils.h"
 #include "mem.h"
-#include <iostream>
-#include <fstream>
 
 #define INI_TEST_SECTION "test"
 #define INI_FUNC_RANGE_SECTION "function_range"
@@ -39,7 +40,7 @@ using namespace mfunc;
  */
 template<class T>
 Experiment<T>::Experiment() 
-    : vBounds(nullptr), tPool(nullptr), resultsFile(""), execTimesFile(""), iterations(0), threadMode(enums::ThreadingMode::ByFunctionIteration)
+    : vBounds(nullptr), tPool(nullptr), resultsFile(""), execTimesFile(""), iterations(0)
 {
 }
 
@@ -151,7 +152,7 @@ bool Experiment<T>::init(const char* paramFile)
             return false;
         }
 
-        cout << "Started " << numberThreads << " worker threads." << endl;
+        cout << "Started " << numberThreads << " worker threads ..." << endl;
 
         // Fill function bounds array with data parsed from iniParams
         if (!parseFuncBounds())
@@ -188,69 +189,83 @@ int Experiment<T>::testAllFunc()
 
     mdata::DataTable<T> resultsTable(iterations, (size_t)NUM_FUNCTIONS);
     mdata::DataTable<T> execTimesTable(iterations, (size_t)NUM_FUNCTIONS);
-
-    mdata::TestParameters<T>* tParams = 
-        new mdata::TestParameters<T>[NUM_FUNCTIONS];
-
-    for (unsigned int i = 0; i < NUM_FUNCTIONS; i++)
-    {
-        mdata::TestParameters<T>& curParam = tParams[i];
-        curParam.funcId = i + 1;
-        curParam.alg = testAlg;
-        curParam.iterations = iterations;
-        curParam.resultsTable = &resultsTable;
-        curParam.execTimesTable = &execTimesTable;
-        curParam.resultsCol = i;
-        curParam.execTimesCol = i;
-
-        resultsTable.setColLabel((size_t)i, FunctionDesc::get(curParam.funcId));
-        execTimesTable.setColLabel((size_t)i, FunctionDesc::get(curParam.funcId));
-    }
+    std::vector<std::future<int>> testFutures;
 
     high_resolution_clock::time_point t_start = high_resolution_clock::now();
 
-    if (threadMode == enums::ThreadingMode::ByFunction)
+    for (unsigned int i = 0; i < NUM_FUNCTIONS; i++)
     {
-        std::vector<std::future<int>> testFutures;
+        resultsTable.setColLabel((size_t)i, FunctionDesc::get(i + 1));
+        execTimesTable.setColLabel((size_t)i, FunctionDesc::get(i + 1));
 
-        // Queue all functions to be ran by our thread pool
-        for (unsigned int f = 1; f <= NUM_FUNCTIONS; f++)
+        for (size_t iter = 0; iter < iterations; iter++)
         {
+            mdata::TestParameters<T> curParam;
+            curParam.funcId = i + 1;
+            curParam.alpha = alpha;
+            curParam.alg = testAlg;
+            curParam.resultsTable = &resultsTable;
+            curParam.execTimesTable = &execTimesTable;
+            curParam.resultsCol = i;
+            curParam.execTimesCol = i;
+            curParam.resultsRow = iter;
+            curParam.execTimesRow = iter;
+
             testFutures.emplace_back(
-                tPool->enqueue(&Experiment::testFunc, this, &tParams[f - 1])
+                tPool->enqueue(&Experiment<T>::testFuncThreaded, this, curParam)
             );
         }
-
-        // Join and get all function return values from thread pool workers
-        for (unsigned int f = 1; f <= NUM_FUNCTIONS; f++)
-        {
-            int errCode = testFutures[f-1].get();
-            if (errCode)
-            {
-                tPool->stopAndJoinAll();
-                cerr << "Error occurred while testing function " << f << endl;
-                return errCode;
-            }
-            
-        }
     }
-    else
+
+    const double totalFutures = static_cast<double>(testFutures.size());
+    int tensPercentile = -1;
+    std::chrono::microseconds waitTime(100);
+
+    while (testFutures.size() > 0)
     {
-        for (unsigned int f = 1; f <= NUM_FUNCTIONS; f++)
+        std::this_thread::sleep_for(waitTime);
+
+        auto it = testFutures.begin();
+
+        while (it != testFutures.end())
         {
-            int errCode = testFuncThreaded(&tParams[f - 1]);
-            if (errCode)
+            if (!it->valid())
             {
-                cerr << "Error occurred while testing function " << f << endl;
-                return errCode;
+                cerr << "Error: Thread future invalid.";
+                tPool->stopAndJoinAll();
+                return 1;
+            }
+
+            std::future_status status = it->wait_for(waitTime);
+            if (status == std::future_status::ready)
+            {
+                int errCode = it->get();
+                if (errCode)
+                {
+                    tPool->stopAndJoinAll();
+                    return errCode;
+                }
+
+                it = testFutures.erase(it);
+
+                int curPercentile = static_cast<int>(((totalFutures - testFutures.size()) / totalFutures) * 10);
+                if (curPercentile > tensPercentile)
+                {
+                    tensPercentile = curPercentile;
+                    cout << "~" << (tensPercentile * 10) << "% " << flush;
+                }
+            }
+            else
+            {
+                it++;
             }
         }
     }
     
     high_resolution_clock::time_point t_end = high_resolution_clock::now();
-    double totalExecTime = (double)duration_cast<nanoseconds>(t_end - t_start).count() / 1000000000.0;
+    long double totalExecTime = static_cast<long double>(duration_cast<nanoseconds>(t_end - t_start).count()) / 1000000000.0L;
 
-    cout << "Test finished. Total time: " << totalExecTime << " seconds." << endl;
+    cout << endl << "Test finished. Total time: " << std::setprecision(7) << totalExecTime << " seconds." << endl;
 
     if (!resultsFile.empty())
     {
@@ -266,16 +281,17 @@ int Experiment<T>::testAllFunc()
         execTimesTable.exportCSV(execTimesFile.c_str());
     }
 
+    cout << flush;
+
     return 0;
 }
- 
+
 template<class T>
-int Experiment<T>::testFunc(mdata::TestParameters<T>* tParams)
+int Experiment<T>::testFuncThreaded(mdata::TestParameters<T> tParams)
 {
-    mdata::Population<T>* pop = popPoolRemove();
     mdata::SearchAlgorithm<T>* alg;
 
-    switch (tParams->alg)
+    switch (tParams.alg)
     {
         case enums::Algorithm::BlindSearch:
             alg = new mdata::BlindSearch<T>();
@@ -288,88 +304,23 @@ int Experiment<T>::testFunc(mdata::TestParameters<T>* tParams)
             return 1;
     }
 
-    RandomBounds<T>& funcBounds = vBounds[tParams->funcId - 1];
-    int returnVal = 0;
+    const RandomBounds<T>& funcBounds = vBounds[tParams.funcId - 1];
 
-    for (size_t i = 0; i < tParams->iterations; i++)
-    {
-        auto result = alg->run(Functions<T>::get(tParams->funcId), funcBounds.min, funcBounds.max, pop, alpha);
-        if (result.err) 
-        {
-            returnVal = result.err;
-            break;
-        }
-
-        tParams->resultsTable->setEntry(i, tParams->resultsCol, result.fitness);
-        tParams->execTimesTable->setEntry(i, tParams->execTimesCol, result.execTime);
-    }
-
-    cout << "F" << tParams->funcId << " done." << endl << flush;
-
-    delete alg;
-    popPoolAdd(pop);
-
-    return returnVal;
-}
-
-template<class T>
-int Experiment<T>::testFuncThreaded(mdata::TestParameters<T>* tParams)
-{
-    mdata::SearchAlgorithm<T>* alg;
-
-    switch (tParams->alg)
-    {
-        case enums::Algorithm::BlindSearch:
-            alg = new mdata::BlindSearch<T>();
-            break;
-        case enums::Algorithm::LocalSearch:
-            alg = new mdata::LocalSearch<T>();
-            break;
-        default:
-            cerr << "Invalid algorithm selected." << endl;
-            return 1;
-    }
-
-    std::vector<std::future<mdata::TestResult<T>>> testFutures;
-    
-    int returnVal = 0;
-
-    for (size_t i = 0; i < tParams->iterations; i++)
-    {
-        testFutures.emplace_back(
-            tPool->enqueue(&Experiment<T>::asyncAlgIteration, this, tParams, alg)
-        );
-    }
-
-    for (size_t i = 0; i < tParams->iterations; i++)
-    {
-        auto tResult = testFutures[i].get();
-        if (tResult.err)
-        {
-            tPool->stopAndJoinAll();
-            return tResult.err;
-        }
-
-        tParams->resultsTable->setEntry(i, tParams->resultsCol, tResult.fitness);
-        tParams->execTimesTable->setEntry(i, tParams->execTimesCol, tResult.execTime);
-    }
-
-    cout << "F" << tParams->funcId << " done." << endl << flush;
-
-    delete alg;
-
-    return returnVal;
-}
-
-template<class T>
-mdata::TestResult<T> Experiment<T>::asyncAlgIteration(mdata::TestParameters<T>* tParams, mdata::SearchAlgorithm<T>* alg)
-{
     mdata::Population<T>* pop = popPoolRemove();
-    RandomBounds<T>& funcBounds = vBounds[tParams->funcId - 1];
-
-    auto result = alg->run(Functions<T>::get(tParams->funcId), funcBounds.min, funcBounds.max, pop, alpha);
+    auto tResult = alg->run(Functions<T>::get(tParams.funcId), funcBounds.min, funcBounds.max, pop, tParams.alpha);
     popPoolAdd(pop);
-    return result;
+
+    if (tResult.err)
+    {
+        cerr << "Error while testing function " << tParams.funcId << endl;
+        return tResult.err;
+    }
+
+    tParams.resultsTable->setEntry(tParams.resultsRow, tParams.resultsCol, tResult.fitness);
+    tParams.execTimesTable->setEntry(tParams.execTimesRow, tParams.execTimesCol, tResult.execTime);
+
+    delete alg;
+    return 0;
 }
 
 template<class T>
@@ -571,5 +522,5 @@ template class mfunc::Experiment<double>;
 template class mfunc::Experiment<long double>;
 
 // =========================
-// End of proj1.cpp
+// End of experiment.cpp
 // =========================

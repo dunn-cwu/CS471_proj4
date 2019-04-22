@@ -132,3 +132,7 @@ inline void ThreadPool::stopAndJoinAll()
 }
 
 #endif
+
+// =========================
+// End of threadpool.h
+// =========================

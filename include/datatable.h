@@ -2,8 +2,8 @@
  * @file datatable.h
  * @author Andrew Dunn (Andrew.Dunn@cwu.edu)
  * @brief Header file for the DataTable class, which represents a
- * spreadsheet/table of values that can be exported to a *.csv file
- * @version 0.1
+ * spreadsheet/table of values that can easily be exported to a *.csv file
+ * @version 0.2
  * @date 2019-04-01
  * 
  * @copyright Copyright (c) 2019

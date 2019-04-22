@@ -1,0 +1,12 @@
+Blind Search (8 Threads)
+============
+30 it, 10 dim: 0.005818296 seconds
+30 it, 20 dim: 0.005591803 seconds
+30 it, 30 dim: 0.008044554 seconds
+
+Local Search (8 Threads)
+Neighbor Precision: 12 decimal places right-side of zero
+============
+30 it, 10 dim: 31.33698 seconds
+30 it, 20 dim: 115.4024 seconds
+30 it, 30 dim: 335.2586 seconds

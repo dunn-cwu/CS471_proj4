@@ -17,7 +17,7 @@
 #include <vector>
 #include <random>
 #include <ostream>
-#include "mfuncPtr.h"
+#include "mfuncptr.h"
 
 namespace mdata
 {

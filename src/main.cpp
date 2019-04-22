@@ -22,7 +22,7 @@ int runExp(const char* paramFile)
    // Create an instance of the project 1 experiment class
    mfunc::Experiment<T> ex;
 
-   cout << "Datatype size: " << sizeof(T) << endl;
+   cout << "Float size: " << (sizeof(T) * 8) << "-bits" << endl;
    cout << "Input parameters file: " << paramFile << endl;
    cout << "Initializing experiment ..." << endl;
 

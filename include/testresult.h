@@ -17,3 +17,7 @@ namespace mdata
 } // mdata
 
 #endif
+
+// =========================
+// End of testresult.h
+// =========================

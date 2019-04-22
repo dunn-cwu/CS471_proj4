@@ -11,24 +11,32 @@ namespace mdata
     struct TestParameters
     {
         unsigned int funcId;
+        T alpha;
         unsigned int resultsCol;
         unsigned int execTimesCol;
+        size_t resultsRow;
+        size_t execTimesRow;
         DataTable<T>* resultsTable;
         DataTable<T>* execTimesTable;
-        size_t iterations;
         enums::Algorithm alg;
         
         TestParameters()
         {
             funcId = 1;
+            alpha = 0;
             alg = enums::Algorithm::BlindSearch;
-            iterations = 0;
             resultsTable = nullptr;
             execTimesTable = nullptr;
             resultsCol = 0;
             execTimesCol = 0;
+            resultsRow = 0;
+            execTimesRow = 0;
         }
     };
 }
 
 #endif
+
+// =========================
+// End of testparam.h
+// =========================

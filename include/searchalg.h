@@ -4,7 +4,7 @@
 #include <chrono>
 #include "population.h"
 #include "testresult.h"
-#include "mfuncPtr.h"
+#include "mfuncptr.h"
 
 using namespace std::chrono;
 
@@ -59,7 +59,7 @@ namespace mdata
         double stopTimer()
         {
             high_resolution_clock::time_point t_end = high_resolution_clock::now();
-            return (double)duration_cast<nanoseconds>(t_end - timer).count() / 1000000.0;
+            return static_cast<double>(duration_cast<nanoseconds>(t_end - timer).count()) / 1000000.0;
         }
     };
 }
@@ -68,3 +68,7 @@ template<class T>
 mdata::SearchAlgorithm<T>::~SearchAlgorithm() { }
 
 #endif
+
+// =========================
+// End of searchalg.h
+// =========================
