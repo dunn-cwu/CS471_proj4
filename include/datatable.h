@@ -16,6 +16,7 @@
 #include <vector>
 #include <string>
 #include <stdexcept>
+#include <iomanip>
 #include "mem.h"
 
 namespace mdata
@@ -131,7 +132,7 @@ namespace mdata
             {
                 for (unsigned int c = 0; c < cols; c++)
                 {
-                    outFile << dataMatrix[r][c];
+                    outFile << std::setprecision(12) << dataMatrix[r][c];
                     if (c < cols - 1) outFile << ",";
                 }
                 outFile << endl;
