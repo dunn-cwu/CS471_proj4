@@ -2,7 +2,7 @@
  * @file mem.h
  * @author Andrew Dunn (Andrew.Dunn@cwu.edu)
  * @brief Header file for various memory utility functions
- * @version 0.1
+ * @version 0.2
  * @date 2019-04-02
  * 
  * @copyright Copyright (c) 2019

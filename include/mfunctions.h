@@ -101,6 +101,13 @@ namespace mfunc
         }
     };
 
+    /**
+     * @brief Struct containing all static math functions.
+     * A function can be called directly by name, or
+     * indirectly using Functions::get or Functions::exec
+     * 
+     * @tparam T Data type for function calculations
+     */
     template <class T>
     struct Functions
     {
@@ -146,7 +153,7 @@ T mfunc::Functions<T>::nthroot(T x, T n)
 /**
  * @brief Function 1.
  * Implementation of Schwefel’s mathematical function
- * @param v Vector as a double array
+ * @param v Vector as a T value array
  * @param n Size of the vector 'v'
  * @return The result of the mathematical function 
  */
@@ -168,7 +175,7 @@ T mfunc::Functions<T>::schwefel(T* v, size_t n)
 /**
  * @brief Function 2.
  * Implementation of 1st De Jong’s mathematical function
- * @param v Vector as a double array
+ * @param v Vector as a T value array
  * @param n Size of the vector 'v'
  * @return The result of the mathematical function 
  */
@@ -190,7 +197,7 @@ T mfunc::Functions<T>::dejong(T* v, size_t n)
 /**
  * @brief Function 3.
  * Implementation of the Rosenbrock mathematical function
- * @param v Vector as a double array
+ * @param v Vector as a T value array
  * @param n Size of the vector 'v'
  * @return The result of the mathematical function 
  */
@@ -215,7 +222,7 @@ T mfunc::Functions<T>::rosenbrok(T* v, size_t n)
 /**
  * @brief Function 4.
  * Implementation of the Rastrigin mathematical function
- * @param v Vector as a double array
+ * @param v Vector as a T value array
  * @param n Size of the vector 'v'
  * @return The result of the mathematical function 
  */
@@ -237,7 +244,7 @@ T mfunc::Functions<T>::rastrigin(T* v, size_t n)
 /**
  * @brief Function 5.
  * Implementation of the Griewangk mathematical function
- * @param v Vector as a double array
+ * @param v Vector as a T value array
  * @param n Size of the vector 'v'
  * @return The result of the mathematical function 
  */
@@ -265,7 +272,7 @@ T mfunc::Functions<T>::griewangk(T* v, size_t n)
 /**
  * @brief Function 6.
  * Implementation of the Sine Envelope Sine Wave mathematical function
- * @param v Vector as a double array
+ * @param v Vector as a T value array
  * @param n Size of the vector 'v'
  * @return The result of the mathematical function 
  */
@@ -291,7 +298,7 @@ T mfunc::Functions<T>::sineEnvelopeSineWave(T* v, size_t n)
 /**
  * @brief Function 7.
  * Implementation of the Stretched V Sine Wave mathematical function
- * @param v Vector as a double array
+ * @param v Vector as a T value array
  * @param n Size of the vector 'v'
  * @return The result of the mathematical function 
  */
@@ -316,7 +323,7 @@ T mfunc::Functions<T>::stretchedVSineWave(T* v, size_t n)
 /**
  * @brief Function 8.
  * Implementation of Ackley’s One mathematical function
- * @param v Vector as a double array
+ * @param v Vector as a T value array
  * @param n Size of the vector 'v'
  * @return The result of the mathematical function 
  */
@@ -340,7 +347,7 @@ T mfunc::Functions<T>::ackleysOne(T* v, size_t n)
 /**
  * @brief Function 9.
  * Implementation of Ackley’s Two mathematical function
- * @param v Vector as a double array
+ * @param v Vector as a T value array
  * @param n Size of the vector 'v'
  * @return The result of the mathematical function 
  */
@@ -365,7 +372,7 @@ T mfunc::Functions<T>::ackleysTwo(T* v, size_t n)
 /**
  * @brief Function 10.
  * Implementation of the Egg Holder mathematical function
- * @param v Vector as a double array
+ * @param v Vector as a T value array
  * @param n Size of the vector 'v'
  * @return The result of the mathematical function 
  */
@@ -389,7 +396,7 @@ T mfunc::Functions<T>::eggHolder(T* v, size_t n)
 /**
  * @brief Function 11.
  * Implementation of the Rana mathematical function
- * @param v Vector as a double array
+ * @param v Vector as a T value array
  * @param n Size of the vector 'v'
  * @return The result of the mathematical function 
  */
@@ -413,7 +420,7 @@ T mfunc::Functions<T>::rana(T* v, size_t n)
 /**
  * @brief Function 12.
  * Implementation of the Pathological mathematical function
- * @param v Vector as a double array
+ * @param v Vector as a T value array
  * @param n Size of the vector 'v'
  * @return The result of the mathematical function 
  */
@@ -439,7 +446,7 @@ T mfunc::Functions<T>::pathological(T* v, size_t n)
 /**
  * @brief Function 13.
  * Implementation of the Michalewicz mathematical function
- * @param v Vector as a double array
+ * @param v Vector as a T value array
  * @param n Size of the vector 'v'
  * @return The result of the mathematical function 
  */
@@ -461,7 +468,7 @@ T mfunc::Functions<T>::michalewicz(T* v, size_t n)
 /**
  * @brief Function 14.
  * Implementation of the Masters Cosine Wave mathematical function
- * @param v Vector as a double array
+ * @param v Vector as a T value array
  * @param n Size of the vector 'v'
  * @return The result of the mathematical function 
  */
@@ -485,7 +492,7 @@ T mfunc::Functions<T>::mastersCosineWave(T* v, size_t n)
 /**
  * @brief Function 15.
  * Implementation of the Quartic mathematical function
- * @param v Vector as a double array
+ * @param v Vector as a T value array
  * @param n Size of the vector 'v'
  * @return The result of the mathematical function 
  */
@@ -516,7 +523,7 @@ T  mfunc::Functions<T>::w(T x)
 /**
  * @brief Function 16.
  * Implementation of the Levy mathematical function
- * @param v Vector as a double array
+ * @param v Vector as a T value array
  * @param n Size of the vector 'v'
  * @return The result of the mathematical function 
  */
@@ -547,7 +554,7 @@ T mfunc::Functions<T>::levy(T* v, size_t n)
 /**
  * @brief Function 17.
  * Implementation of the Step mathematical function
- * @param v Vector as a double array
+ * @param v Vector as a T value array
  * @param n Size of the vector 'v'
  * @return The result of the mathematical function 
  */
@@ -570,7 +577,7 @@ T mfunc::Functions<T>::step(T* v, size_t n)
 /**
  * @brief Function 18.
  * Implementation of the Alpine mathematical function
- * @param v Vector as a double array
+ * @param v Vector as a T value array
  * @param n Size of the vector 'v'
  * @return The result of the mathematical function 
  */
@@ -589,6 +596,15 @@ T mfunc::Functions<T>::alpine(T* v, size_t n)
 
 // ================================================
 
+/**
+ * @brief Returns a function pointer to the math function
+ * with the given id.
+ * 
+ * @tparam T Data type to be used in the function's calculations
+ * @param f Id of the function (1-18)
+ * @return mfunc::mfuncPtr<T> Function pointer to the associated function,
+ * or nullptr if the id is invalid.
+ */
 template <class T>
 mfunc::mfuncPtr<T> mfunc::Functions<T>::get(unsigned int f)
 {
@@ -642,7 +658,7 @@ mfunc::mfuncPtr<T> mfunc::Functions<T>::get(unsigned int f)
  * Executes the function with the given id and returns true on success.
  * Otherwise returns false if id is invalid. 
  * @param f Function id to execute
- * @param v Vector as a double array
+ * @param v Vector as a T value array
  * @param n Size of the vector 'v'
  * @param outResult Output reference variable for the result of the mathematical function 
  * @return true if 'f' is a valid id and the function was ran. Otherwise false.

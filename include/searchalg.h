@@ -1,3 +1,15 @@
+/**
+ * @file searchalg.h
+ * @author Andrew Dunn (Andrew.Dunn@cwu.edu)
+ * @brief Defines the SearchAlgorithm class, Algorithm enum,
+ * and  AlgorithmNames struct. The SearchAlgorithm class serves
+ * as a base class for implemented search algorithms.
+ * @version 0.1
+ * @date 2019-04-19
+ * 
+ * @copyright Copyright (c) 2019
+ * 
+ */
 #ifndef __SEARCHALG_H
 #define __SEARCHALG_H
 
@@ -10,6 +22,9 @@ using namespace std::chrono;
 
 namespace enums
 {
+    /**
+     * @brief Enum of different available search algorithms
+     */
     enum Algorithm
     {
         BlindSearch = 0,
@@ -17,6 +32,10 @@ namespace enums
         Count = 2
     };
 
+    /**
+     * @brief Struct that contains constant string names for
+     * the different search algorithms
+     */
     struct AlgorithmNames
     {
         static constexpr const char* BLIND_SEARCH = "Blind Search";
@@ -40,6 +59,13 @@ namespace enums
 
 namespace mdata
 {
+    /**
+     * @brief The SearchAlgorithm class is used as a base class for
+     * other implemented search algorithms. Provides a common interface
+     * to run each algorithm.
+     * 
+     * @tparam T The data type used by the algorithm
+     */
     template<class T>
     class SearchAlgorithm
     {
@@ -51,11 +77,17 @@ namespace mdata
         double timeDiff;
         high_resolution_clock::time_point timer;
 
+        /**
+         * @brief Starts the execution time timer
+         */
         void startTimer()
         {
             timer = high_resolution_clock::now();
         }
 
+        /**
+         * @brief Returns the amount of time that has passed since startTimer() was called in miliseconds.
+         */
         double stopTimer()
         {
             high_resolution_clock::time_point t_end = high_resolution_clock::now();
@@ -64,6 +96,8 @@ namespace mdata
     };
 }
 
+// Trivial implementation of pure-virtual destructor
+// as required by the C++ language
 template<class T>
 mdata::SearchAlgorithm<T>::~SearchAlgorithm() { }
 

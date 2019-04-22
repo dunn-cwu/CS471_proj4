@@ -2,8 +2,8 @@
  * @file main.cpp
  * @author Andrew Dunn (Andrew.Dunn@cwu.edu)
  * @brief Program entry point. 
- * Creates and runs CS471 project 1 experiment.
- * @version 0.1
+ * Creates and runs CS471 project 2 experiment.
+ * @version 0.2
  * @date 2019-04-01
  * 
  * @copyright Copyright (c) 2019
@@ -16,12 +16,22 @@
 
 using namespace std;
 
+/**
+ * @brief Runs the experiment using the given data type
+ * and parameter file. Currently supports three different
+ * data types: float, double, and long double.
+ * 
+ * @tparam T 
+ * @param paramFile 
+ * @return int 
+ */
 template<class T>
 int runExp(const char* paramFile)
 {
    // Create an instance of the project 1 experiment class
    mfunc::Experiment<T> ex;
 
+   // Print size of selected data type in bits
    cout << "Float size: " << (sizeof(T) * 8) << "-bits" << endl;
    cout << "Input parameters file: " << paramFile << endl;
    cout << "Initializing experiment ..." << endl;
@@ -43,8 +53,10 @@ int main(int argc, char** argv)
       return EXIT_FAILURE;
    }
 
+   // Default data type is double
    int dataType = 1;
 
+   // User specified a data type, retrieve the value
    if (argc > 2)
    {
       std::stringstream ss(argv[2]);
@@ -52,13 +64,14 @@ int main(int argc, char** argv)
       if (!ss) dataType = 1;
    }
 
+   // Verify specified data type switch
    if (dataType < 0 || dataType > 2)
    {
       cout << dataType << " is not a valid data type index. Value must be between 0 and 2." << endl;
       dataType = 1;
    }
 
-   // Run experiment and return success code
+   // Run experiment with correct data type and return success code
    switch (dataType)
    {
       case 0:

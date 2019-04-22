@@ -50,6 +50,13 @@ namespace mdata
     class DataTable
     {
     public:
+        /**
+         * @brief Construct a new Data Table object
+         * Throws std::length_error and std::bad_alloc
+         * 
+         * @param _rows Number of rows in table
+         * @param _cols Number of columns in table
+         */
         DataTable(size_t _rows, size_t _cols) : rows(_rows), cols(_cols), dataMatrix(nullptr)
         {
             if (rows == 0)
@@ -64,11 +71,20 @@ namespace mdata
             colLabels.resize(_cols, std::string());
         }
 
+        /**
+         * @brief Destroy the Data Table object
+         */
         ~DataTable()
         {
             util::releaseMatrix(dataMatrix, rows);
         }
         
+        /**
+         * @brief Gets the string label for the column with the given index
+         * 
+         * @param colIndex Index of the column
+         * @return std::string String value of the column label
+         */
         std::string getColLabel(size_t colIndex)
         {
             if (colIndex >= colLabels.size())
@@ -77,6 +93,12 @@ namespace mdata
             return colLabels[colIndex];
         }
 
+        /**
+         * @brief Sets the string label for the column with the given index
+         * 
+         * @param colIndex Index of the column
+         * @param newLabel New string label for the column
+         */
         void setColLabel(size_t colIndex, std::string newLabel)
         {
              if (colIndex >= colLabels.size())
@@ -85,6 +107,13 @@ namespace mdata
             colLabels[colIndex] = newLabel;
         }
 
+        /**
+         * @brief Returns the value in the table at the given row and column
+         * 
+         * @param row Row index of the table
+         * @param col Column index of the table
+         * @return T Value of the entry at the given row and column
+         */
         T getEntry(size_t row, size_t col)
         {
             if (dataMatrix == nullptr)
@@ -97,6 +126,13 @@ namespace mdata
             return dataMatrix[row][col];
         }
 
+        /**
+         * @brief Set the value for the table entry at the given row and column
+         * 
+         * @param row Row index of the table
+         * @param col Column index of the table
+         * @param val New value for the entry
+         */
         void setEntry(size_t row, size_t col, T val)
         {
             if (dataMatrix == nullptr)
@@ -109,6 +145,13 @@ namespace mdata
             dataMatrix[row][col] = val;
         }
 
+        /**
+         * @brief Exports the contents of this DataTable to a .csv file
+         * 
+         * @param filePath Path to the file that will be filled with this table's values
+         * @return true If the file was successfully written to
+         * @return false If there was an error opening the file
+         */
         bool exportCSV(const char* filePath)
         {
             if (dataMatrix == nullptr) return false;
@@ -132,7 +175,7 @@ namespace mdata
             {
                 for (unsigned int c = 0; c < cols; c++)
                 {
-                    outFile << std::setprecision(12) << dataMatrix[r][c];
+                    outFile << std::setprecision(8) << dataMatrix[r][c];
                     if (c < cols - 1) outFile << ",";
                 }
                 outFile << endl;
@@ -145,7 +188,7 @@ namespace mdata
         size_t rows; /** Number of rows in the table. */
         size_t cols; /** Number of columns in the table. */
         std::vector<std::string> colLabels; /** Vector of column labels. Index n = Col n. */
-        T** dataMatrix;
+        T** dataMatrix; /** Matrix of table data values */
         
     };
 } // mdata

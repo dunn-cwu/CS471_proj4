@@ -23,7 +23,7 @@
  * 
  * ================================
  * 
- * This source file has been modified by Andrew Dunn to add additional functions
+ * This source file has been modified slightly by Andrew Dunn
  */
 
 #ifndef __THREADPOOL_H

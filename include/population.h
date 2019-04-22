@@ -2,9 +2,8 @@
  * @file population.h
  * @author Andrew Dunn (Andrew.Dunn@cwu.edu)
  * @brief Header file for the Population class.
- * Stores a population and fitness values.
- * Includes functions to analyze the fitness data.
- * @version 0.1
+ * Stores a population and resulting fitness values.
+ * @version 0.2
  * @date 2019-04-04
  * 
  * @copyright Copyright (c) 2019
@@ -22,8 +21,8 @@
 namespace mdata
 {
     /**
-     * @brief Data class for storing a multi-dimensional population of data.
-     * Includes fitness analysis functions.
+     * @brief Data class for storing a multi-dimensional population of data
+     * with the associated fitness.
      * 
      * @tparam T Data type of the population.
      */

@@ -1,3 +1,14 @@
+/**
+ * @file localsearch.h
+ * @author Andrew Dunn (Andrew.Dunn@cwu.edu)
+ * @brief 
+ * @version 0.1
+ * @date 2019-04-19
+ * 
+ * @copyright Copyright (c) 2019
+ * 
+ */
+
 #ifndef __LOCALSEARCH_H
 #define __LOCALSEARCH_H
 
@@ -6,10 +17,17 @@
 #include "searchalg.h"
 #include "mem.h"
 
+// Precision when checking neighbor fitness in number of decimal places right side of zero.
 #define DEC_PRECISION 12
 
 namespace mdata
 {
+    /**
+     * @brief The LocalSearch class implements the Local Search
+     * algorithm, which is ran using the overridden SearchAlgorithm::run() function.
+     * 
+     * @tparam T Data type used
+     */
     template<class T>
     class LocalSearch : public SearchAlgorithm<T>
     {
@@ -56,12 +74,15 @@ namespace mdata
             // Get the index for the best fitness in the population
             pIndex = pop->getBestFitnessIndex();
 
+            // Get population vector and fitness of best solution
             T* x = pop->getPopulationPtr(pIndex);
             T xFit = pop->getFitness(pIndex);
 
+            // Create empty Y vector
             T* y = util::allocArray<T>(dimSize);
             T yFit = 0;
 
+            // Create empty Z vector
             T* z = util::allocArray<T>(dimSize);
             T zFit = 0;
 
@@ -71,35 +92,50 @@ namespace mdata
                 return TestResult<T>(3, 0, 0.0);
             }
 
+            // Keep looping until search fails to improve
             while (!stop)
             {   
                 stop = true;
                 
+                // Copy values from X vector into Y vector
                 util::copyArray<T>(x, y, dimSize);
 
+                // Loop through each dimension in vector
                 for (size_t a = 0; a < dimSize; a++)
                 {
+                    // Add alpha value to y[a]
                     y[a] = x[a] + alpha;
-                    lockBounds(y[a], fMin, fMax);
 
+                    // Make sure y[a] is within the function bounds
+                    lockBounds(y[a], fMin, fMax); 
+
+                    // Calculate fitness for y vector
                     yFit = funcPtr(y, dimSize);
+
+                    // Update Z[a] vector value based on the difference between Y and X
                     z[a] = x[a] - (alpha * (yFit - xFit));
+
+                    // Make sure z[a] is within the function bounds
                     lockBounds(z[a], fMin, fMax);
 
-                    y[a] = x[a]; // Reset y[a]
+                    y[a] = x[a]; // Reset y[a] to prepare for next loop
                 }
 
                 zFit = funcPtr(z, dimSize);
 
-                // May cause extreme execution times for some functions
+                // The following 'if' statement may cause extreme execution 
+                // times for some functions due to floating point precision:
                 // if (zFit < xFit)
                 //
-                // The replacement 'if' statement below puts a limit
-                // on the minimum acknowledged improvement
+                // The replacement 'if' statement below places a limit
+                // on the minimum acknowledged improvement fitness,
+                // hopefully preventing extreme run-times:
                 if (xFit - zFit > MIN_IMPROVEMENT)
                 {
+                    // Z is an improvement on X, so keep searching
                     stop = false;
 
+                    // Swap Z and X for next loop
                     T* tmp = x;
                     x = z;
                     xFit = zFit;
@@ -107,6 +143,7 @@ namespace mdata
                 }
             }
 
+            // Return best result
             return TestResult<T>(0, xFit, stopTimer());
         }
     private:

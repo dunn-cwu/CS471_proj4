@@ -3,8 +3,7 @@
  * @author Andrew Dunn (Andrew.Dunn@cwu.edu)
  * @brief Implementation file for the Population class.
  * Stores a population and fitness values.
- * Includes functions to analyze the fitness data.
- * @version 0.1
+ * @version 0.2
  * @date 2019-04-04
  * 
  * @copyright Copyright (c) 2019
@@ -150,6 +149,16 @@ bool Population<T>::setFitness(size_t popIndex, T value)
     return true;
 }
 
+/**
+ * @brief Uses the given function pointer to update the fitness value for the
+ * population vector at the given index.
+ * 
+ * @tparam T Data type of the population.
+ * @param popIndex Index of the population vector you wish to set the fitness for.
+ * @param funcPtr Function pointer to the math function that will be used to calculate 
+ * the fitness value.
+ * @return Returns true on success, otherwise false.
+ */
 template<class T>
 bool Population<T>::calcFitness(size_t popIndex, mfunc::mfuncPtr<T> funcPtr)
 {
@@ -190,18 +199,36 @@ T* Population<T>::getFitnessPtr(size_t popIndex)
     return &popFitness[popIndex];
 }
 
+/**
+ * @brief Returns a std::vector of all current fitness values
+ * 
+ * @tparam T Data type of the population.
+ * @return std::vector<T> std::vector of fitness values
+ */
 template<class T>
 std::vector<T> Population<T>::getAllFitness()
 {
     return std::vector<T>(popFitness[0], popFitness[popSize]);
 }
 
+/**
+ * @brief Returns a pointer to the current best fitness value
+ * 
+ * @tparam T Data type of the population.
+ * @return T* Pointer to the best fitness value
+ */
 template<class T>
 T* Population<T>::getBestFitnessPtr()
 {
     return &popFitness[getBestFitnessIndex()];
 }
 
+/**
+ * @brief Returns the index of the current best fitness value
+ * 
+ * @tparam T Data type of the population.
+ * @return size_t Index of the best fitness value
+ */
 template<class T>
 size_t Population<T>::getBestFitnessIndex()
 {
@@ -322,6 +349,7 @@ void Population<T>::releasePopFitness()
     releaseArray<T>(popFitness);
 }
 
+// Explicit template specializations due to separate implementations in this CPP file
 template class mdata::Population<float>;
 template class mdata::Population<double>;
 template class mdata::Population<long double>;

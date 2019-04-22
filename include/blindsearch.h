@@ -4,7 +4,7 @@
  * @brief Implements the BlindSearch class, which inherits SearchAlgorithm.
  * BlindSearch::run executes the blind search algorithm on a given population.
  * @version 0.1
- * @date 2019-04-21
+ * @date 2019-04-19
  * 
  * @copyright Copyright (c) 2019
  * 

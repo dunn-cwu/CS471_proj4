@@ -1,17 +1,17 @@
 /**
- * @file cs471.h
+ * @file experiment.h
  * @author Andrew Dunn (Andrew.Dunn@cwu.edu)
- * @brief Header file for the mfuncExperiment class.
+ * @brief Header file for the Experiment class.
  * Contains the basic logic and functions to run the cs471 project experiment.
- * @version 0.1
+ * @version 0.2
  * @date 2019-04-01
  * 
  * @copyright Copyright (c) 2019
  * 
  */
 
-#ifndef __CS471_H
-#define __CS471_H
+#ifndef __EXPERIMENT_H
+#define __EXPERIMENT_H
 
 #include <string>
 #include <random>
@@ -24,16 +24,6 @@
 #include "searchalg.h"
 #include "testresult.h"
 #include "testparam.h"
-
-namespace enums
-{
-    enum class ThreadingMode
-    {
-        ByFunction = 0,
-        ByFunctionIteration = 1,
-        Count = 2
-    };
-}
 
 namespace mfunc
 {
@@ -51,9 +41,9 @@ namespace mfunc
     /**
      * @brief Contains classes for running the CS471 project experiment.
      * 
-     * The mfuncExperiment class opens a given parameter .ini file
-     * and executes the CS471 project 1 experiment with the specified
-     * parameters. runAllFunc() runs all 18 functions defined in mfunc.cpp
+     * The Experiment class opens a given parameter .ini file
+     * and executes the CS471 project 2 experiment with the specified
+     * parameters. runAllFunc() runs all 18 functions defined in mfunctions.h
      * a given number of times with vectors of random values that have a
      * given number of dimensions and collects all results/data. This
      * data is then entered into a DataTable and exported as a *.csv file.
@@ -70,13 +60,13 @@ namespace mfunc
     private:
         std::mutex popPoolMutex;
         util::IniReader iniParams; /** IniReader class instance for importing experiment parameters */
-        std::vector<mdata::Population<T>*> populationsPool;
+        std::vector<mdata::Population<T>*> populationsPool; /** Pool of population objects used by the worker threads. 1 per thread. */
         std::string resultsFile;   /** The file path for the results output *.csv file */
         std::string execTimesFile;   /** The file path for the exec times output *.csv file */
         RandomBounds<T>* vBounds; /** An array of RandomBounds structs that holds the function bounds read from iniParams */
-        ThreadPool* tPool;
-        size_t iterations;
-        T alpha;
+        ThreadPool* tPool; /** Pool of worker threads which are used to run multiple tests in parallel */
+        size_t iterations; /** Number of iterations for the selected test algorithm */
+        T alpha; /** Alpha value currently only used in Local Search */
         enums::Algorithm testAlg;
 
         mdata::Population<T>* popPoolRemove();
@@ -93,7 +83,7 @@ namespace mfunc
         bool allocateThreadPool(size_t numThreads);
         void releaseThreadPool();
     };
-} // proj1
+} // mfunc
 
 #endif
 
