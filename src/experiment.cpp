@@ -1,5 +1,5 @@
 /**
- * @file cs471.cpp
+ * @file experiment.cpp
  * @author Andrew Dunn (Andrew.Dunn@cwu.edu)
  * @brief Implementation file for the Experiment class.
  * Contains the basic logic and functions to run the cs471 project experiment.

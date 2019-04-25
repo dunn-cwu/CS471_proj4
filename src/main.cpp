@@ -2,7 +2,7 @@
  * @file main.cpp
  * @author Andrew Dunn (Andrew.Dunn@cwu.edu)
  * @brief Program entry point. 
- * Creates and runs CS471 project 2 experiment.
+ * Creates and runs CS471 project 3 experiment.
  * @version 0.2
  * @date 2019-04-01
  * 
