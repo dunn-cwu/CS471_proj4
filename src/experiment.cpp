@@ -15,8 +15,6 @@
 #include <iomanip>
 #include "experiment.h"
 #include "datatable.h"
-#include "blindsearch.h"
-#include "localsearch.h"
 #include "stringutils.h"
 #include "mem.h"
 
@@ -118,23 +116,23 @@ bool Experiment<T>::init(const char* paramFile)
                 << INI_TEST_ALPHA << " is missing or is equal to zero: " << paramFile << endl;
             return false;
         }
-        else if (selectedAlg >= static_cast<unsigned int>(enums::Algorithm::Count))
-        {
-            cerr << "Experiment init failed: Param file [test]->" 
-                << INI_TEST_ALGORITHM << " entry missing or out of bounds: " << paramFile << endl;
-            return false;
-        }
+        // else if (selectedAlg >= static_cast<unsigned int>(enums::Algorithm::Count))
+        // {
+        //     cerr << "Experiment init failed: Param file [test]->" 
+        //         << INI_TEST_ALGORITHM << " entry missing or out of bounds: " << paramFile << endl;
+        //     return false;
+        // }
 
         // Cast iterations and test algorithm to correct types
         iterations = (size_t)numberIter;
-        testAlg = static_cast<enums::Algorithm>(selectedAlg);
+        // testAlg = static_cast<enums::Algorithm>(selectedAlg);
 
         // Print test parameters to console
         cout << "Population size: " << numberSol << endl;
         cout << "Dimensions: " << numberDim << endl;
         cout << "Iterations: " << iterations << endl;
         cout << "Alpha value: " << alpha << endl;
-        cout << "Algorithm: " << enums::AlgorithmNames::get(testAlg) << endl;
+        // cout << "Algorithm: " << enums::AlgorithmNames::get(testAlg) << endl;
 
         // Allocate memory for all population objects. We need one for each thread to prevent conflicts.
         if (!allocatePopulationPool((size_t)numberThreads, (size_t)numberSol, (size_t)numberDim))
@@ -192,7 +190,7 @@ int Experiment<T>::testAllFunc()
 {
     if (populationsPool.size() == 0) return 1;
 
-    // Construct results and execution times tables
+/*     // Construct results and execution times tables
     mdata::DataTable<T> resultsTable(iterations, (size_t)NUM_FUNCTIONS);
     mdata::DataTable<T> execTimesTable(iterations, (size_t)NUM_FUNCTIONS);
 
@@ -313,7 +311,7 @@ int Experiment<T>::testAllFunc()
         execTimesTable.exportCSV(execTimesFile.c_str());
     }
 
-    cout << flush;
+    cout << flush; */
 
     return 0;
 }
@@ -328,7 +326,7 @@ int Experiment<T>::testAllFunc()
 template<class T>
 int Experiment<T>::testFuncThreaded(mdata::TestParameters<T> tParams)
 {
-    mdata::SearchAlgorithm<T>* alg;
+    /* mdata::SearchAlgorithm<T>* alg;
 
     // Construct a search algorithm object for the selected alg
     switch (tParams.alg)
@@ -367,6 +365,8 @@ int Experiment<T>::testFuncThreaded(mdata::TestParameters<T> tParams)
     tParams.execTimesTable->setEntry(tParams.execTimesRow, tParams.execTimesCol, tResult.execTime);
 
     delete alg;
+    return 0; */
+
     return 0;
 }
 

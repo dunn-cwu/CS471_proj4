@@ -21,7 +21,6 @@
 #include "inireader.h"
 #include "population.h"
 #include "threadpool.h"
-#include "searchalg.h"
 #include "testresult.h"
 #include "testparam.h"
 
@@ -67,7 +66,7 @@ namespace mfunc
         ThreadPool* tPool; /** Pool of worker threads which are used to run multiple tests in parallel */
         size_t iterations; /** Number of iterations for the selected test algorithm */
         T alpha; /** Alpha value currently only used in Local Search */
-        enums::Algorithm testAlg;
+        // enums::Algorithm testAlg;
 
         mdata::Population<T>* popPoolRemove();
         void popPoolAdd(mdata::Population<T>* popPtr);

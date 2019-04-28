@@ -16,7 +16,6 @@
 
 #include <cstddef> // size_t definition
 #include "datatable.h"
-#include "searchalg.h"
 
 namespace mdata
 {
@@ -36,13 +35,12 @@ namespace mdata
         size_t execTimesRow; /** DataTable row index to store the execution time */
         DataTable<T>* resultsTable; /** Pointer to the DataTable used to store the fitness results */
         DataTable<T>* execTimesTable; /** Pointer to the DataTable used to store the execution times */
-        enums::Algorithm alg; /** Selected search algorithm for this test */
+        // enums::Algorithm alg; /** Selected search algorithm for this test */
         
         TestParameters()
         {
             funcId = 1;
             alpha = 0;
-            alg = enums::Algorithm::BlindSearch;
             resultsTable = nullptr;
             execTimesTable = nullptr;
             resultsCol = 0;
