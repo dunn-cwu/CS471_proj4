@@ -17,6 +17,8 @@
 #include <cmath>
 #include "mfuncptr.h"
 
+#define _NUM_FUNCTIONS 18
+
 #define _schwefelDesc "Schwefel’s function"
 #define _dejongDesc "1st De Jong’s function"
 #define _rosenbrokDesc "Rosenbrock"
@@ -36,6 +38,24 @@
 #define _stepDesc "Step"
 #define _alpineDesc "Alpine"
 
+#define _schwefelId 1
+#define _dejongId 2
+#define _rosenbrokId 3
+#define _rastriginId 4
+#define _griewangkId 5
+#define _sineEnvelopeSineWaveId 6
+#define _stretchedVSineWaveId 7
+#define _ackleysOneId 8
+#define _ackleysTwoId 9
+#define _eggHolderId 10
+#define _ranaId 11
+#define _pathologicalId 12
+#define _michalewiczId 13
+#define _mastersCosineWaveId 14
+#define _quarticId 15
+#define _levyId 16
+#define _stepId 17
+#define _alpineId 18
 /**
  * Scope for all math functions
  */
@@ -44,7 +64,7 @@ namespace mfunc
     /**
      * Constant value for the total number of math functions contained in this namespace
      */
-    constexpr const unsigned int NUM_FUNCTIONS = 18;
+    constexpr const unsigned int NUM_FUNCTIONS = _NUM_FUNCTIONS;
 
     /**
     * @brief get() returns a function's description
@@ -59,41 +79,41 @@ namespace mfunc
         {
             switch (f)
             {
-                case 1:
+                case _schwefelId:
                     return _schwefelDesc;
-                case 2:
+                case _dejongId:
                     return _dejongDesc;
-                case 3:
+                case _rosenbrokId:
                     return _rosenbrokDesc;
-                case 4:
+                case _rastriginId:
                     return _rastriginDesc;
-                case 5:
+                case _griewangkId:
                     return _griewangkDesc;
-                case 6:
+                case _sineEnvelopeSineWaveId:
                     return _sineEnvelopeSineWaveDesc;
-                case 7:
+                case _stretchedVSineWaveId:
                     return _stretchedVSineWaveDesc;
-                case 8:
+                case _ackleysOneId:
                     return _ackleysOneDesc;
-                case 9:
+                case _ackleysTwoId:
                     return _ackleysTwoDesc;
-                case 10:
+                case _eggHolderId:
                     return _eggHolderDesc;
-                case 11:
+                case _ranaId:
                     return _ranaDesc;
-                case 12:
+                case _pathologicalId:
                     return _pathologicalDesc;
-                case 13:
+                case _michalewiczId:
                     return _michalewiczDesc;
-                case 14:
+                case _mastersCosineWaveId:
                     return _mastersCosineWaveDesc;
-                case 15:
+                case _quarticId:
                     return _quarticDesc;
-                case 16:
+                case _levyId:
                     return _levyDesc;
-                case 17:
+                case _stepId:
                     return _stepDesc;
-                case 18:
+                case _alpineId:
                     return _alpineDesc;
                 default:
                     return NULL;
@@ -133,8 +153,21 @@ namespace mfunc
         static bool exec(unsigned int f, T* v, size_t n, T& outResult);
         static T nthroot(T x, T n);
         static T w(T x);
+        static size_t getCallCounter(unsigned int f);
+        static void resetCallCounters();
+    private:
+        static size_t fCallCounters[_NUM_FUNCTIONS];
+        static bool fCountersInit;
+
+        static void fCounterInc(unsigned int f);
     };
 }
+
+template <class T>
+bool mfunc::Functions<T>::fCountersInit = false;
+
+template <class T>
+size_t mfunc::Functions<T>::fCallCounters[_NUM_FUNCTIONS];
 
 /**
  * Simple helper function that returns the nth-root
@@ -145,7 +178,7 @@ namespace mfunc
 template <class T>
 T mfunc::Functions<T>::nthroot(T x, T n)
 {
-    return pow(x, static_cast<T>(1.0) / n);
+    return std::pow(x, static_cast<T>(1.0) / n);
 }
 
 // ================================================
@@ -160,11 +193,13 @@ T mfunc::Functions<T>::nthroot(T x, T n)
 template <class T>
 T mfunc::Functions<T>::schwefel(T* v, size_t n)
 {
+    fCounterInc(_schwefelId);
+
     T f = 0.0;
 
     for (size_t i = 0; i < n; i++)
     {
-        f += (static_cast<T>(-1.0) * v[i]) * sin(sqrt(std::abs(v[i])));
+        f += (static_cast<T>(-1.0) * v[i]) * std::sin(std::sqrt(std::abs(v[i])));
     }
 
     return (static_cast<T>(418.9829) * static_cast<T>(n)) - f;
@@ -182,6 +217,8 @@ T mfunc::Functions<T>::schwefel(T* v, size_t n)
 template <class T>
 T mfunc::Functions<T>::dejong(T* v, size_t n)
 {
+    fCounterInc(_dejongId);
+
     T f = 0.0;
 
     for (size_t i = 0; i < n; i++)
@@ -204,6 +241,8 @@ T mfunc::Functions<T>::dejong(T* v, size_t n)
 template <class T>
 T mfunc::Functions<T>::rosenbrok(T* v, size_t n)
 {
+    fCounterInc(_rosenbrokId);
+
     T f = 0.0;
 
     for (size_t i = 0; i < n - 1; i++)
@@ -229,11 +268,13 @@ T mfunc::Functions<T>::rosenbrok(T* v, size_t n)
 template <class T>
 T mfunc::Functions<T>::rastrigin(T* v, size_t n)
 {
+    fCounterInc(_rastriginId);
+
     T f = 0.0;
 
     for (size_t i = 0; i < n; i++)
     {
-        f += (v[i] * v[i]) - (static_cast<T>(10.0) * cos(static_cast<T>(2.0) * static_cast<T>(M_PI) * v[i]));
+        f += (v[i] * v[i]) - (static_cast<T>(10.0) * std::cos(static_cast<T>(2.0) * static_cast<T>(M_PI) * v[i]));
     }
 
     return static_cast<T>(10.0) * static_cast<T>(n) * f;
@@ -251,6 +292,8 @@ T mfunc::Functions<T>::rastrigin(T* v, size_t n)
 template <class T>
 T mfunc::Functions<T>::griewangk(T* v, size_t n)
 {
+    fCounterInc(_griewangkId);
+
     T sum = 0.0;
     T product = 0.0;
 
@@ -261,7 +304,7 @@ T mfunc::Functions<T>::griewangk(T* v, size_t n)
 
     for (size_t i = 0; i < n; i++)
     {
-        product *= cos(v[i] / sqrt(static_cast<T>(i + 1.0)));
+        product *= std::cos(v[i] / std::sqrt(static_cast<T>(i + 1.0)));
     }
 
     return static_cast<T>(1.0) + sum - product;
@@ -279,11 +322,13 @@ T mfunc::Functions<T>::griewangk(T* v, size_t n)
 template <class T>
 T mfunc::Functions<T>::sineEnvelopeSineWave(T* v, size_t n)
 {
+    fCounterInc(_sineEnvelopeSineWaveId);
+
     T f = 0.0;
 
     for (size_t i = 0; i < n - 1; i++)
     {
-        T a = sin(v[i]*v[i] + v[i+1]*v[i+1] - static_cast<T>(0.5));
+        T a = std::sin(v[i]*v[i] + v[i+1]*v[i+1] - static_cast<T>(0.5));
         a *= a;
         T b = (static_cast<T>(1.0) + static_cast<T>(0.001)*(v[i]*v[i] + v[i+1]*v[i+1]));
         b *= b;
@@ -305,12 +350,14 @@ T mfunc::Functions<T>::sineEnvelopeSineWave(T* v, size_t n)
 template <class T>
 T mfunc::Functions<T>::stretchedVSineWave(T* v, size_t n)
 {
+    fCounterInc(_stretchedVSineWaveId);
+
     T f = 0.0;
 
     for (size_t i = 0; i < n - 1; i++)
     {
         T a = nthroot(v[i]*v[i] + v[i+1]*v[i+1], static_cast<T>(4.0));
-        T b = sin(static_cast<T>(50.0) * nthroot(v[i]*v[i] + v[i+1]*v[i+1], static_cast<T>(10.0)));
+        T b = std::sin(static_cast<T>(50.0) * nthroot(v[i]*v[i] + v[i+1]*v[i+1], static_cast<T>(10.0)));
         b *= b;
         f += a * b + static_cast<T>(1.0);
     }
@@ -330,12 +377,14 @@ T mfunc::Functions<T>::stretchedVSineWave(T* v, size_t n)
 template <class T>
 T mfunc::Functions<T>::ackleysOne(T* v, size_t n)
 {
+    fCounterInc(_ackleysOneId);
+
     T f = 0.0;
 
     for (size_t i = 0; i < n - 1; i++)
     {
-        T a = (static_cast<T>(1.0) / pow(static_cast<T>(M_E), static_cast<T>(0.2))) * sqrt(v[i]*v[i] + v[i+1]*v[i+1]);
-        T b = static_cast<T>(3.0) * (cos(static_cast<T>(2.0) * v[i]) + sin(static_cast<T>(2.0) * v[i+1]));
+        T a = (static_cast<T>(1.0) / std::pow(static_cast<T>(M_E), static_cast<T>(0.2))) * std::sqrt(v[i]*v[i] + v[i+1]*v[i+1]);
+        T b = static_cast<T>(3.0) * (std::cos(static_cast<T>(2.0) * v[i]) + std::sin(static_cast<T>(2.0) * v[i+1]));
         f += a + b;
     }
 
@@ -354,13 +403,15 @@ T mfunc::Functions<T>::ackleysOne(T* v, size_t n)
 template <class T>
 T mfunc::Functions<T>::ackleysTwo(T* v, size_t n)
 {
+    fCounterInc(_ackleysTwoId);
+
     T f = 0.0;
 
     for (size_t i = 0; i < n - 1; i++)
     {
-        T a = static_cast<T>(20.0) / pow(static_cast<T>(M_E), static_cast<T>(0.2) * sqrt((v[i]*v[i] + v[i+1]*v[i+1]) / static_cast<T>(2.0)));
-        T b = pow(static_cast<T>(M_E), static_cast<T>(0.5) * 
-            (cos(static_cast<T>(2.0) * static_cast<T>(M_PI) * v[i]) + cos(static_cast<T>(2.0) * static_cast<T>(M_PI) * v[i+1])));
+        T a = static_cast<T>(20.0) / std::pow(static_cast<T>(M_E), static_cast<T>(0.2) * std::sqrt((v[i]*v[i] + v[i+1]*v[i+1]) / static_cast<T>(2.0)));
+        T b = std::pow(static_cast<T>(M_E), static_cast<T>(0.5) * 
+            (std::cos(static_cast<T>(2.0) * static_cast<T>(M_PI) * v[i]) + std::cos(static_cast<T>(2.0) * static_cast<T>(M_PI) * v[i+1])));
         f += static_cast<T>(20.0) + static_cast<T>(M_E) - a - b;
     }
 
@@ -379,12 +430,14 @@ T mfunc::Functions<T>::ackleysTwo(T* v, size_t n)
 template <class T>
 T mfunc::Functions<T>::eggHolder(T* v, size_t n)
 {
+    fCounterInc(_eggHolderId);
+
     T f = 0.0;
 
     for (size_t i = 0; i < n - 1; i++)
     {
-        T a = static_cast<T>(-1.0) * v[i] * sin(sqrt(std::abs(v[i] - v[i+1] - static_cast<T>(47.0))));
-        T b = (v[i+1] + static_cast<T>(47)) * sin(sqrt(std::abs(v[i+1] + static_cast<T>(47.0) + (v[i]/static_cast<T>(2.0)))));
+        T a = static_cast<T>(-1.0) * v[i] * std::sin(std::sqrt(std::abs(v[i] - v[i+1] - static_cast<T>(47.0))));
+        T b = (v[i+1] + static_cast<T>(47)) * std::sin(std::sqrt(std::abs(v[i+1] + static_cast<T>(47.0) + (v[i]/static_cast<T>(2.0)))));
         f += a - b;
     }
 
@@ -403,12 +456,14 @@ T mfunc::Functions<T>::eggHolder(T* v, size_t n)
 template <class T>
 T mfunc::Functions<T>::rana(T* v, size_t n)
 {
+    fCounterInc(_ranaId);
+
     T f = 0.0;
 
     for (size_t i = 0; i < n - 1; i++)
     {
-        T a = v[i] * sin(sqrt(std::abs(v[i+1] - v[i] + static_cast<T>(1.0)))) * cos(sqrt(std::abs(v[i+1] + v[i] + static_cast<T>(1.0))));
-        T b = (v[i+1] + static_cast<T>(1.0)) * cos(sqrt(std::abs(v[i+1] - v[i] + static_cast<T>(1.0)))) * sin(sqrt(std::abs(v[i+1] + v[i] + static_cast<T>(1.0))));
+        T a = v[i] * std::sin(std::sqrt(std::abs(v[i+1] - v[i] + static_cast<T>(1.0)))) * std::cos(std::sqrt(std::abs(v[i+1] + v[i] + static_cast<T>(1.0))));
+        T b = (v[i+1] + static_cast<T>(1.0)) * std::cos(std::sqrt(std::abs(v[i+1] - v[i] + static_cast<T>(1.0)))) * std::sin(std::sqrt(std::abs(v[i+1] + v[i] + static_cast<T>(1.0))));
         f += a + b;
     }
 
@@ -427,11 +482,13 @@ T mfunc::Functions<T>::rana(T* v, size_t n)
 template <class T>
 T mfunc::Functions<T>::pathological(T* v, size_t n)
 {
+    fCounterInc(_pathologicalId);
+
     T f = 0.0;
 
     for (size_t i = 0; i < n - 1; i++)
     {
-        T a = sin(sqrt(static_cast<T>(100.0)*v[i]*v[i] + v[i+1]*v[i+1]));
+        T a = std::sin(std::sqrt(static_cast<T>(100.0)*v[i]*v[i] + v[i+1]*v[i+1]));
         a = (a*a) - static_cast<T>(0.5);
         T b = (v[i]*v[i] - static_cast<T>(2)*v[i]*v[i+1] + v[i+1]*v[i+1]);
         b = static_cast<T>(1.0) + static_cast<T>(0.001) * b*b;
@@ -453,11 +510,13 @@ T mfunc::Functions<T>::pathological(T* v, size_t n)
 template <class T>
 T mfunc::Functions<T>::michalewicz(T* v, size_t n)
 {
+    fCounterInc(_michalewiczId);
+
     T f = 0.0;
 
     for (size_t i = 0; i < n; i++)
     {
-        f += sin(v[i]) * pow(sin(((i+1) * v[i] * v[i]) / static_cast<T>(M_PI)), static_cast<T>(20));
+        f += std::sin(v[i]) * std::pow(std::sin(((i+1) * v[i] * v[i]) / static_cast<T>(M_PI)), static_cast<T>(20));
     }
 
     return -1.0 * f;
@@ -475,12 +534,14 @@ T mfunc::Functions<T>::michalewicz(T* v, size_t n)
 template <class T>
 T mfunc::Functions<T>::mastersCosineWave(T* v, size_t n)
 {
+    fCounterInc(_mastersCosineWaveId);
+
     T f = 0.0;
 
     for (size_t i = 0; i < n - 1; i++)
     {
-        T a = pow(M_E, static_cast<T>(-1.0/8.0)*(v[i]*v[i] + v[i+1]*v[i+1] + static_cast<T>(0.5)*v[i+1]*v[i]));
-        T b = cos(static_cast<T>(4) * sqrt(v[i]*v[i] + v[i+1]*v[i+1] + static_cast<T>(0.5)*v[i]*v[i+1]));
+        T a = std::pow(M_E, static_cast<T>(-1.0/8.0)*(v[i]*v[i] + v[i+1]*v[i+1] + static_cast<T>(0.5)*v[i+1]*v[i]));
+        T b = std::cos(static_cast<T>(4) * std::sqrt(v[i]*v[i] + v[i+1]*v[i+1] + static_cast<T>(0.5)*v[i]*v[i+1]));
         f += a * b;
     }
 
@@ -499,6 +560,8 @@ T mfunc::Functions<T>::mastersCosineWave(T* v, size_t n)
 template <class T>
 T mfunc::Functions<T>::quartic(T* v, size_t n)
 {
+    fCounterInc(_quarticId);
+
     T f = 0.0;
 
     for (size_t i = 0; i < n; i++)
@@ -530,22 +593,24 @@ T  mfunc::Functions<T>::w(T x)
 template <class T>
 T mfunc::Functions<T>::levy(T* v, size_t n)
 {
+    fCounterInc(_levyId);
+
     T f = 0.0;
 
     for (size_t i = 0; i < n - 1; i++)
     {
         T a = w(v[i]) - static_cast<T>(1.0);
         a *= a;
-        T b = sin(static_cast<T>(M_PI) * w(v[i]) + static_cast<T>(1.0));
+        T b = std::sin(static_cast<T>(M_PI) * w(v[i]) + static_cast<T>(1.0));
         b *= b;
         T c = w(v[n - 1]) - static_cast<T>(1.0);
         c *= c;
-        T d = sin(static_cast<T>(2.0) * static_cast<T>(M_PI) * w(v[n - 1]));
+        T d = std::sin(static_cast<T>(2.0) * static_cast<T>(M_PI) * w(v[n - 1]));
         d *= d;
         f += a * (static_cast<T>(1.0) + static_cast<T>(10.0) * b) + c * (static_cast<T>(1.0) + d);
     }
 
-    T e = sin(static_cast<T>(M_PI) * w(v[0]));
+    T e = std::sin(static_cast<T>(M_PI) * w(v[0]));
     return e*e + f;
 }
 
@@ -561,6 +626,8 @@ T mfunc::Functions<T>::levy(T* v, size_t n)
 template <class T>
 T mfunc::Functions<T>::step(T* v, size_t n)
 {
+    fCounterInc(_stepId);
+
     T f = 0.0;
 
     for (size_t i = 0; i < n; i++)
@@ -584,11 +651,13 @@ T mfunc::Functions<T>::step(T* v, size_t n)
 template <class T>
 T mfunc::Functions<T>::alpine(T* v, size_t n)
 {
+    fCounterInc(_alpineId);
+
     T f = 0.0;
 
     for (size_t i = 0; i < n; i++)
     {
-        f += std::abs(v[i] * sin(v[i]) + static_cast<T>(0.1)*v[i]);
+        f += std::abs(v[i] * std::sin(v[i]) + static_cast<T>(0.1)*v[i]);
     }
 
     return f;
@@ -610,41 +679,41 @@ mfunc::mfuncPtr<T> mfunc::Functions<T>::get(unsigned int f)
 {
     switch (f)
     {
-        case 1:
+        case _schwefelId:
             return Functions<T>::schwefel;
-        case 2:
+        case _dejongId:
             return Functions<T>::dejong;
-        case 3:
+        case _rosenbrokId:
             return Functions<T>::rosenbrok;
-        case 4:
+        case _rastriginId:
             return Functions<T>::rastrigin;
-        case 5:
+        case _griewangkId:
             return Functions<T>::griewangk;
-        case 6:
+        case _sineEnvelopeSineWaveId:
             return Functions<T>::sineEnvelopeSineWave;
-        case 7:
+        case _stretchedVSineWaveId:
             return Functions<T>::stretchedVSineWave;
-        case 8:
+        case _ackleysOneId:
             return Functions<T>::ackleysOne;
-        case 9:
+        case _ackleysTwoId:
             return Functions<T>::ackleysTwo;
-        case 10:
+        case _eggHolderId:
             return Functions<T>::eggHolder;
-        case 11:
+        case _ranaId:
             return Functions<T>::rana;
-        case 12:
+        case _pathologicalId:
             return Functions<T>::pathological;
-        case 13:
+        case _michalewiczId:
             return Functions<T>::michalewicz;
-        case 14:
+        case _mastersCosineWaveId:
             return Functions<T>::mastersCosineWave;
-        case 15:
+        case _quarticId:
             return Functions<T>::quartic;
-        case 16:
+        case _levyId:
             return Functions<T>::levy;
-        case 17:
+        case _stepId:
             return Functions<T>::step;
-        case 18:
+        case _alpineId:
             return Functions<T>::alpine;
         default:
             return nullptr;
@@ -671,6 +740,38 @@ bool mfunc::Functions<T>::exec(unsigned int f, T* v, size_t n, T& outResult)
 
     outResult = fPtr(v, n);
     return true;
+}
+
+template <class T>
+size_t mfunc::Functions<T>::getCallCounter(unsigned int f)
+{
+    if (f == 0 || f > _NUM_FUNCTIONS)
+        return 0;
+
+    return fCallCounters[f - 1];
+}
+
+template <class T>
+void mfunc::Functions<T>::resetCallCounters()
+{
+    for (size_t i = 0; i < _NUM_FUNCTIONS; i++)
+        fCallCounters[i] = 0;
+}
+
+template <class T>
+void mfunc::Functions<T>::fCounterInc(unsigned int f)
+{
+    if (!fCountersInit)
+    {
+        resetCallCounters();
+        fCountersInit = true;
+    }
+    else if (f == 0 || f > _NUM_FUNCTIONS)
+    {
+        return;
+    }
+
+    fCallCounters[f - 1] += 1;
 }
 
 #endif

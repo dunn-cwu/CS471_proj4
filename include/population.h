@@ -37,34 +37,61 @@ namespace mdata
         size_t getPopulationSize();
         size_t getDimensionsSize();
         T* getPopulationPtr(size_t popIndex);
+        void copyPopulation(size_t destIndex, T* srcPop);
+        void sortDescendByFitness();
+
+        void setFitnessNormalization(bool useNormalization);
 
         bool generate(T minBound, T maxBound);
         bool setFitness(size_t popIndex, T value);
         bool calcFitness(size_t popIndex, mfunc::mfuncPtr<T> funcPtr);
+        bool calcAllFitness(mfunc::mfuncPtr<T> funcPtr);
 
         T getFitness(size_t popIndex);
         T* getFitnessPtr(size_t popIndex);
         std::vector<T> getAllFitness();
+
+        T* getMaxFitnessPtr();
+        size_t getMaxFitnessIndex();
+
+        T* getMinFitnessPtr();
+        size_t getMinFitnessIndex();
+
         T* getBestFitnessPtr();
         size_t getBestFitnessIndex();
 
+        T getTotalFitness();
+
+        T getMinCost();
+
         void outputPopulation(std::ostream& outStream, const char* delim, const char* lineBreak);
         void outputFitness(std::ostream& outStream, const char* delim, const char* lineBreak);
+
+        void debugOutputAll();
     private:
         const size_t popSize; /** Size of the population, and the number of rows in the popMatrix */
         const size_t popDim;  /** Dimensions of the population, and the number of columns in the popMatrix */
-        
+        bool normFitness;
+
         T** popMatrix; /** Matrix of population values */
         T* popFitness; /** Array of fitness values */
+        T* popCost; /** Array of cost values */
 
         std::random_device rdev; /** Random seed for random number generator */
         std::mt19937 rgen; /** Mersenne twister random number generator engine */
+
+        T normalizeCost(T cost, T globalMinCost);
 
         bool allocPopMatrix();
         void releasePopMatrix();
 
         bool allocPopFitness();
         void releasePopFitness();
+
+        void qs_swapval(T& a, T& b);
+        void qs_swapptr(T*& a, T*& b);
+        long part_fit_decend(long low, long high);
+        void qs_fit_decend(long low, long high);
     };
 }
 

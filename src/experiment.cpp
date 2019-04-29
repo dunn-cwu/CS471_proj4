@@ -17,6 +17,7 @@
 #include "datatable.h"
 #include "stringutils.h"
 #include "mem.h"
+#include "geneticalg.h"
 
 // Ini file string sections and keys
 #define INI_TEST_SECTION "test"
@@ -190,6 +191,44 @@ int Experiment<T>::testAllFunc()
 {
     if (populationsPool.size() == 0) return 1;
 
+    mdata::DataTable<T> testTable(100, 50);
+    mdata::Population<T> pop1(200, 30);
+    mdata::Population<T> pop2(200, 30);
+
+    for (size_t exp = 0; exp < 50; exp++)
+    {
+        GAParams<T> gParams;
+        gParams.fitnessTable = &testTable;
+        gParams.fitTableCol = exp;
+        gParams.mainPop = &pop1;
+        gParams.auxPop = &pop2;
+        gParams.fPtr = Functions<T>::get(1);
+        gParams.fMinBound = vBounds[0].min;
+        gParams.fMaxBound = vBounds[0].max;
+        gParams.generations = 100;
+        gParams.crProb = 0.8;
+        gParams.mutProb = 0.005;
+        gParams.mutRange = 0.1;
+        gParams.mutPrec = 1;
+        gParams.elitismRate = 0.2;
+
+        mfunc::GeneticAlgorithm<T>::run(gParams);
+    }
+
+    testTable.exportCSV("genalg_test.csv");
+
+
+    /* testP.setFitnessNormalization(true);
+    testP.generate(vBounds[0].min, vBounds[0].max);
+    testP.calcAllFitness(Functions<T>::get(1));
+
+    testP.debugOutputAll();
+
+    cout << endl << "=======================" << endl;
+
+    testP.sortDescendByFitness();
+    testP.debugOutputAll();
+ */
 /*     // Construct results and execution times tables
     mdata::DataTable<T> resultsTable(iterations, (size_t)NUM_FUNCTIONS);
     mdata::DataTable<T> execTimesTable(iterations, (size_t)NUM_FUNCTIONS);
