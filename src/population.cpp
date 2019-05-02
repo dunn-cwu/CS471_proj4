@@ -110,6 +110,17 @@ void Population<T>::copyPopulation(size_t destIndex, T* srcPop)
 }
 
 template <class T>
+void Population<T>::copyPopulation(size_t destIndex, const std::vector<T>& srcPop)
+{
+    if (popFitness == nullptr || destIndex >= popSize) return;
+
+    for (size_t i = 0; i < popDim && i < srcPop.size(); i++)
+    {
+        popMatrix[destIndex][i] = srcPop[i];
+    }
+}
+
+template <class T>
 void Population<T>::sortDescendByFitness()
 {
     qs_fit_decend(0, popSize - 1);
