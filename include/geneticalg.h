@@ -1,12 +1,6 @@
 #ifndef __GENETICALG_H
 #define __GENETICALG_H
 
-#if defined (_MSC_VER)  // Visual studio
-    #define thread_local __declspec( thread )
-#elif defined (__GCC__) // GCC
-    #define thread_local __thread
-#endif
-
 #include "population.h"
 #include "mfuncptr.h"
 #include "datatable.h"
@@ -33,15 +27,29 @@ namespace mfunc
     };
 
     template <class T>
-    struct GeneticAlgorithm
+    class GeneticAlgorithm
     {
-        static int run(GAParams<T> params);
-        static void select(mdata::Population<T>* pop, size_t& outP1, size_t& outP2);
-        static size_t selRW(mdata::Population<T>* pop);
-        static void crossover(size_t dim, T* p1, T* p2, double cr, T* outCh1, T* outCh2);
-        static void mutate(size_t dim, T* s, double mutProb, double mutRange, double mutPrec, T fMin, T fMax);
-        static void reduce(mdata::Population<T>* oldPop, mdata::Population<T>* newPop, size_t elitism);
+    public:
+        GeneticAlgorithm();
+        int run(GAParams<T> params);
+        
+    private:
+        std::random_device seed;
+        std::mt19937 engine;
+        std::uniform_real_distribution<double> rchance;
+
+        void select(mdata::Population<T>* pop, size_t& outP1, size_t& outP2);
+        size_t selRW(mdata::Population<T>* pop);
+        void crossover(size_t dim, T* p1, T* p2, double cr, T* outCh1, T* outCh2);
+        void mutate(size_t dim, T* s, double mutProb, double mutRange, double mutPrec, T fMin, T fMax);
+        void reduce(mdata::Population<T>* oldPop, mdata::Population<T>* newPop, size_t elitism);
     };
+}
+
+template <class T>
+mfunc::GeneticAlgorithm<T>::GeneticAlgorithm()
+    : seed(), engine(seed()), rchance(0, 1)
+{
 }
 
 template <class T>
@@ -58,8 +66,8 @@ int mfunc::GeneticAlgorithm<T>::run(GAParams<T> p)
     const size_t dimSize = p.mainPop->getDimensionsSize();
     const size_t elitism = p.elitismRate * (double)popSize;
 
-    T* childOne = new T[dimSize];
-    T* childTwo = new T[dimSize];
+    T* const childOne = new T[dimSize];
+    T* const childTwo = new T[dimSize];
 
     p.mainPop->setFitnessNormalization(true);
     p.auxPop->setFitnessNormalization(true);
@@ -113,9 +121,6 @@ void mfunc::GeneticAlgorithm<T>::select(mdata::Population<T>* pop, size_t& outP1
 template <class T>
 size_t mfunc::GeneticAlgorithm<T>::selRW(mdata::Population<T>* pop)
 {
-    static thread_local std::random_device seed;
-    static thread_local std::mt19937 engine(seed());
-
     std::uniform_real_distribution<T> dist(0, pop->getTotalFitness());
     const size_t pSize = pop->getPopulationSize();
     T r = dist(engine);
@@ -133,9 +138,6 @@ size_t mfunc::GeneticAlgorithm<T>::selRW(mdata::Population<T>* pop)
 template <class T>
 void mfunc::GeneticAlgorithm<T>::crossover(size_t dim, T* p1, T* p2, double cr, T* outCh1, T* outCh2)
 {
-    static thread_local std::random_device seed;
-    static thread_local std::mt19937 engine(seed());
-    static thread_local std::uniform_real_distribution<double> rchance(0, 1);
     std::uniform_int_distribution<long> rdim(0, dim - 1);
 
     if (rchance(engine) < cr)
@@ -168,10 +170,7 @@ void mfunc::GeneticAlgorithm<T>::crossover(size_t dim, T* p1, T* p2, double cr, 
 template <class T>
 void mfunc::GeneticAlgorithm<T>::mutate(size_t dim, T* s, double mutProb, double mutRange, double mutPrec, T fMin, T fMax)
 {
-    static thread_local std::random_device seed;
-    static thread_local std::mt19937 engine(seed());
-    static thread_local std::uniform_real_distribution<double> rchance(0, 1);
-    static thread_local std::uniform_real_distribution<double> rflip(-1, 1);
+    std::uniform_real_distribution<double> rflip(-1, 1);
 
     for (size_t i = 0; i < dim; i++)
     {

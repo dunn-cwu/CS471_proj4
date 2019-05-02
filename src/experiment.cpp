@@ -219,7 +219,6 @@ int Experiment<T>::testAllFunc_GA()
 
     for (unsigned int f = 1; f <= mfunc::NUM_FUNCTIONS; f++)
     {
-        testFutures.clear();
         resultsTable.clearData();
 
         for (size_t exp = 0; exp < iterations; exp++)
@@ -246,9 +245,11 @@ int Experiment<T>::testAllFunc_GA()
 
         auto it = testFutures.begin();
 
-        while (it != testFutures.end())
+        for (size_t futIndex = 0; futIndex < testFutures.size(); futIndex++)
         {
-            if (!it->valid())
+            auto& curFut = testFutures[futIndex];
+
+            if (!curFut.valid())
             {
                 // An error occured with one of the threads
                 cerr << "Error: Thread future invalid.";
@@ -256,7 +257,7 @@ int Experiment<T>::testAllFunc_GA()
                 return 1;
             }
 
-            int errCode = it->get();
+            int errCode = curFut.get();
             if (errCode)
             {
                 // An error occurred while running the task.
@@ -264,9 +265,9 @@ int Experiment<T>::testAllFunc_GA()
                 tPool->stopAndJoinAll();
                 return errCode;
             }
-
-            it = testFutures.erase(it);
         }
+
+        testFutures.clear();
 
         std::string outFile = resultsFile;
         outFile = std::regex_replace(outFile, std::regex("\\%ALG%"), "GA");
@@ -303,7 +304,9 @@ int Experiment<T>::runGAThreaded(GAParams<T> gaParams)
     gaParams.mainPop = popMain;
     gaParams.auxPop = popAux;
 
-    int retVal = mfunc::GeneticAlgorithm<T>::run(gaParams);
+    GeneticAlgorithm<T>* gaAlg = new GeneticAlgorithm<T>;
+    int retVal = gaAlg->run(gaParams);
+    delete gaAlg;
 
     popPoolAdd(popAux);
     popPoolAdd(popMain);
