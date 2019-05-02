@@ -23,6 +23,7 @@
 #include "threadpool.h"
 #include "testresult.h"
 #include "testparam.h"
+#include "geneticalg.h"
 
 namespace mfunc
 {
@@ -35,6 +36,13 @@ namespace mfunc
     {
         T min = 0.0;
         T max = 0.0;
+    };
+
+    enum class Algorithm
+    {
+        GeneticAlgorithm = 0,
+        DifferentialEvolution = 1,
+        Count = 2
     };
 
     /**
@@ -55,7 +63,8 @@ namespace mfunc
         ~Experiment();
         bool init(const char* paramFile);
         int testAllFunc();
-        int testFuncThreaded(mdata::TestParameters<T> tParams);
+        int testAllFunc_GA();
+        int runGAThreaded(GAParams<T> gaParams);
     private:
         std::mutex popPoolMutex;
         util::IniReader iniParams; /** IniReader class instance for importing experiment parameters */
@@ -65,8 +74,9 @@ namespace mfunc
         RandomBounds<T>* vBounds; /** An array of RandomBounds structs that holds the function bounds read from iniParams */
         ThreadPool* tPool; /** Pool of worker threads which are used to run multiple tests in parallel */
         size_t iterations; /** Number of iterations for the selected test algorithm */
-        T alpha; /** Alpha value currently only used in Local Search */
-        // enums::Algorithm testAlg;
+        Algorithm testAlg;
+
+        bool loadGAParams(GAParams<T>& refParams);
 
         mdata::Population<T>* popPoolRemove();
         void popPoolAdd(mdata::Population<T>* popPtr);

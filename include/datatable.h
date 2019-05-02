@@ -79,6 +79,11 @@ namespace mdata
             util::releaseMatrix(dataMatrix, rows);
         }
         
+        void clearData()
+        {
+            util::initMatrix<T>(dataMatrix, rows, cols, 0);
+        }
+
         /**
          * @brief Gets the string label for the column with the given index
          * 

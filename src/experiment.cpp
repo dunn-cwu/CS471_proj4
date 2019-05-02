@@ -13,23 +13,31 @@
 #include <iostream>
 #include <fstream>
 #include <iomanip>
+#include <regex>
 #include "experiment.h"
 #include "datatable.h"
 #include "stringutils.h"
 #include "mem.h"
-#include "geneticalg.h"
 
 // Ini file string sections and keys
 #define INI_TEST_SECTION "test"
 #define INI_FUNC_RANGE_SECTION "function_range"
+#define INI_GENALG_SECTION "genetic_alg"
+
 #define INI_TEST_POPULATION "population"
 #define INI_TEST_DIMENSIONS "dimensions"
 #define INI_TEST_ITERATIONS "iterations"
 #define INI_TEST_NUMTHREADS "num_threads"
-#define INI_TEST_ALPHA "alpha"
 #define INI_TEST_ALGORITHM "algorithm"
 #define INI_TEST_RESULTSFILE "results_file"
 #define INI_TEST_EXECTIMESFILE "exec_times_file"
+
+#define INI_GENALG_GENERATIONS "generations"
+#define INI_GENALG_CRPROB "crossover_prob"
+#define INI_GENALG_MUTPROB "mutation_prob"
+#define INI_GENALG_MUTRANGE "mutation_range"
+#define INI_GENALG_MUTPREC "mutation_precision"
+#define INI_GENALG_ELITISMRATE "elitism_rate"
 
 using namespace std;
 using namespace std::chrono;
@@ -81,7 +89,6 @@ bool Experiment<T>::init(const char* paramFile)
         long numberDim = iniParams.getEntryAs<long>(INI_TEST_SECTION, INI_TEST_DIMENSIONS);
         long numberIter = iniParams.getEntryAs<long>(INI_TEST_SECTION, INI_TEST_ITERATIONS);
         long numberThreads = iniParams.getEntryAs<long>(INI_TEST_SECTION, INI_TEST_NUMTHREADS);
-        alpha = iniParams.getEntryAs<T>(INI_TEST_SECTION, INI_TEST_ALPHA);
         unsigned int selectedAlg = iniParams.getEntryAs<unsigned int>(INI_TEST_SECTION, INI_TEST_ALGORITHM);
         resultsFile = iniParams.getEntry(INI_TEST_SECTION, INI_TEST_RESULTSFILE);
         execTimesFile = iniParams.getEntry(INI_TEST_SECTION, INI_TEST_EXECTIMESFILE);
@@ -111,32 +118,25 @@ bool Experiment<T>::init(const char* paramFile)
                 << INI_TEST_NUMTHREADS << " entry missing or out of bounds: " << paramFile << endl;
             return false;
         }
-        else if (alpha == 0)
+        else if (selectedAlg >= static_cast<unsigned int>(Algorithm::Count))
         {
             cerr << "Experiment init failed: Param file [test]->" 
-                << INI_TEST_ALPHA << " is missing or is equal to zero: " << paramFile << endl;
+                << INI_TEST_ALGORITHM << " entry missing or out of bounds: " << paramFile << endl;
             return false;
         }
-        // else if (selectedAlg >= static_cast<unsigned int>(enums::Algorithm::Count))
-        // {
-        //     cerr << "Experiment init failed: Param file [test]->" 
-        //         << INI_TEST_ALGORITHM << " entry missing or out of bounds: " << paramFile << endl;
-        //     return false;
-        // }
 
         // Cast iterations and test algorithm to correct types
         iterations = (size_t)numberIter;
-        // testAlg = static_cast<enums::Algorithm>(selectedAlg);
+        testAlg = static_cast<Algorithm>(selectedAlg);
 
         // Print test parameters to console
         cout << "Population size: " << numberSol << endl;
         cout << "Dimensions: " << numberDim << endl;
         cout << "Iterations: " << iterations << endl;
-        cout << "Alpha value: " << alpha << endl;
         // cout << "Algorithm: " << enums::AlgorithmNames::get(testAlg) << endl;
 
         // Allocate memory for all population objects. We need one for each thread to prevent conflicts.
-        if (!allocatePopulationPool((size_t)numberThreads, (size_t)numberSol, (size_t)numberDim))
+        if (!allocatePopulationPool((size_t)numberThreads * 2, (size_t)numberSol, (size_t)numberDim))
         {
             cerr << "Experiment init failed: Unable to allocate populations." << endl;
             return false;
@@ -189,103 +189,63 @@ bool Experiment<T>::init(const char* paramFile)
 template<class T>
 int Experiment<T>::testAllFunc()
 {
+    switch (testAlg)
+    {
+        case Algorithm::GeneticAlgorithm:
+            return testAllFunc_GA();
+        default:
+            return 1;
+    }
+}
+
+template<class T>
+int Experiment<T>::testAllFunc_GA()
+{
     if (populationsPool.size() == 0) return 1;
 
-    mdata::DataTable<T> testTable(100, 50);
-    mdata::Population<T> pop1(200, 30);
-    mdata::Population<T> pop2(200, 30);
+    GAParams<T> _p;
+    if (!loadGAParams(_p)) return 2;
 
-    for (size_t exp = 0; exp < 50; exp++)
-    {
-        GAParams<T> gParams;
-        gParams.fitnessTable = &testTable;
-        gParams.fitTableCol = exp;
-        gParams.mainPop = &pop1;
-        gParams.auxPop = &pop2;
-        gParams.fPtr = Functions<T>::get(1);
-        gParams.fMinBound = vBounds[0].min;
-        gParams.fMaxBound = vBounds[0].max;
-        gParams.generations = 100;
-        gParams.crProb = 0.8;
-        gParams.mutProb = 0.005;
-        gParams.mutRange = 0.1;
-        gParams.mutPrec = 1;
-        gParams.elitismRate = 0.2;
+    const GAParams<T>& paramTemplate = _p;
 
-        mfunc::GeneticAlgorithm<T>::run(gParams);
-    }
+    mdata::DataTable<T> resultsTable(paramTemplate.generations, iterations);
 
-    testTable.exportCSV("genalg_test.csv");
+    for (unsigned int c = 0; c < iterations; c++)
+        resultsTable.setColLabel(c, std::string("Exp_") + std::to_string(c + 1));
 
-
-    /* testP.setFitnessNormalization(true);
-    testP.generate(vBounds[0].min, vBounds[0].max);
-    testP.calcAllFitness(Functions<T>::get(1));
-
-    testP.debugOutputAll();
-
-    cout << endl << "=======================" << endl;
-
-    testP.sortDescendByFitness();
-    testP.debugOutputAll();
- */
-/*     // Construct results and execution times tables
-    mdata::DataTable<T> resultsTable(iterations, (size_t)NUM_FUNCTIONS);
-    mdata::DataTable<T> execTimesTable(iterations, (size_t)NUM_FUNCTIONS);
-
-    // Prepare thread futures vector, used to ensure all async tasks complete
-    // succesfully.
     std::vector<std::future<int>> testFutures;
 
-    // Start recording total execution time
     high_resolution_clock::time_point t_start = high_resolution_clock::now();
 
-    // For each of the NUM_FUNCTIONS functions, prepare a TestParameters
-    // struct and queue an asynchronous test that will be picked up and
-    // executed by one of the threads in the thread pool.
-    for (unsigned int i = 0; i < NUM_FUNCTIONS; i++)
+    for (unsigned int f = 1; f <= mfunc::NUM_FUNCTIONS; f++)
     {
-        // Update column labels for results and exec times tables
-        resultsTable.setColLabel((size_t)i, FunctionDesc::get(i + 1));
-        execTimesTable.setColLabel((size_t)i, FunctionDesc::get(i + 1));
+        testFutures.clear();
+        resultsTable.clearData();
 
-        // Queue up a new function test for each iteration
-        for (size_t iter = 0; iter < iterations; iter++)
+        for (size_t exp = 0; exp < iterations; exp++)
         {
-            mdata::TestParameters<T> curParam;
-            curParam.funcId = i + 1;
-            curParam.alpha = alpha;
-            curParam.alg = testAlg;
-            curParam.resultsTable = &resultsTable;
-            curParam.execTimesTable = &execTimesTable;
-            curParam.resultsCol = i;
-            curParam.execTimesCol = i;
-            curParam.resultsRow = iter;
-            curParam.execTimesRow = iter;
+            GAParams<T> gaParams;
+            gaParams.fitnessTable = &resultsTable;
+            gaParams.fitTableCol = exp;
+            gaParams.mainPop = nullptr;
+            gaParams.auxPop = nullptr;
+            gaParams.fPtr = Functions<T>::get(f);
+            gaParams.fMinBound = vBounds[f-1].min;
+            gaParams.fMaxBound = vBounds[f-1].max;
+            gaParams.generations = paramTemplate.generations;
+            gaParams.crProb = paramTemplate.crProb;
+            gaParams.mutProb = paramTemplate.mutProb;
+            gaParams.mutRange = paramTemplate.mutRange;
+            gaParams.mutPrec = paramTemplate.mutPrec;
+            gaParams.elitismRate = paramTemplate.elitismRate;
 
-            // Add function test to async queue
             testFutures.emplace_back(
-                tPool->enqueue(&Experiment<T>::testFuncThreaded, this, curParam)
-            );
+                    tPool->enqueue(&Experiment<T>::runGAThreaded, this, gaParams)
+                );
         }
-    }
 
-    // Get the total number of async tasks queued
-    const double totalFutures = static_cast<double>(testFutures.size());
-    int tensPercentile = -1;
-    std::chrono::microseconds waitTime(100);
-
-    // Loop until all async tasks are completed and the thread futures
-    // array is empty
-    while (testFutures.size() > 0)
-    {
-        // Sleep a little bit since the async thread tasks are higher priority
-        std::this_thread::sleep_for(waitTime);
-
-        // Get iterator to first thread future
         auto it = testFutures.begin();
 
-        // Loop through all thread futures
         while (it != testFutures.end())
         {
             if (!it->valid())
@@ -296,61 +256,33 @@ int Experiment<T>::testAllFunc()
                 return 1;
             }
 
-            // Get the status of the current thread future (async task)
-            std::future_status status = it->wait_for(waitTime);
-            if (status == std::future_status::ready)
+            int errCode = it->get();
+            if (errCode)
             {
-                // Task has completed, get return value
-                int errCode = it->get();
-                if (errCode)
-                {
-                    // An error occurred while running the task.
-                    // Bail out of function
-                    tPool->stopAndJoinAll();
-                    return errCode;
-                }
-
-                // Remove processed task future from vector
-                it = testFutures.erase(it);
-
-                // Calculate the percent completed of all tasks, rounded to the nearest 10%
-                int curPercentile = static_cast<int>(((totalFutures - testFutures.size()) / totalFutures) * 10);
-                if (curPercentile > tensPercentile)
-                {
-                    // Print latest percent value to the console
-                    tensPercentile = curPercentile;
-                    cout << "~" << (tensPercentile * 10) << "% " << flush;
-                }
+                // An error occurred while running the task.
+                // Bail out of function
+                tPool->stopAndJoinAll();
+                return errCode;
             }
-            else
-            {
-                // Async task has not yet completed, advance to the next one
-                it++;
-            }
+
+            it = testFutures.erase(it);
+        }
+
+        std::string outFile = resultsFile;
+        outFile = std::regex_replace(outFile, std::regex("\\%ALG%"), "GA");
+        outFile = std::regex_replace(outFile, std::regex("\\%FUNC%"), std::to_string(f));
+
+        if (!outFile.empty())
+        {
+            resultsTable.exportCSV(outFile.c_str());
+            cout << "Exported function results to: " << outFile << endl << flush;
         }
     }
-    
-    // Record total execution time and print it to the console
+
     high_resolution_clock::time_point t_end = high_resolution_clock::now();
     long double totalExecTime = static_cast<long double>(duration_cast<nanoseconds>(t_end - t_start).count()) / 1000000000.0L;
 
     cout << endl << "Test finished. Total time: " << std::setprecision(7) << totalExecTime << " seconds." << endl;
-
-    if (!resultsFile.empty())
-    {
-        // Export results table to a *.csv file
-        cout << "Exporting results to: " << resultsFile << endl;
-        resultsTable.exportCSV(resultsFile.c_str());
-    }
-
-    if (!execTimesFile.empty())
-    {
-        // Export exec times table to a *.csv file
-        cout << "Exporting execution times to: " << execTimesFile << endl;
-        execTimesTable.exportCSV(execTimesFile.c_str());
-    }
-
-    cout << flush; */
 
     return 0;
 }
@@ -363,50 +295,79 @@ int Experiment<T>::testAllFunc()
  * @return int An error code if any
  */
 template<class T>
-int Experiment<T>::testFuncThreaded(mdata::TestParameters<T> tParams)
+int Experiment<T>::runGAThreaded(GAParams<T> gaParams)
 {
-    /* mdata::SearchAlgorithm<T>* alg;
+    // Retrieve the next two population objects from the population pool
+    mdata::Population<T>* popMain = popPoolRemove();
+    mdata::Population<T>* popAux = popPoolRemove();
+    gaParams.mainPop = popMain;
+    gaParams.auxPop = popAux;
 
-    // Construct a search algorithm object for the selected alg
-    switch (tParams.alg)
+    int retVal = mfunc::GeneticAlgorithm<T>::run(gaParams);
+
+    popPoolAdd(popAux);
+    popPoolAdd(popMain);
+
+    return retVal;
+}
+
+template<class T>
+bool Experiment<T>::loadGAParams(GAParams<T>& refParams)
+{
+    // Extract test parameters from ini file
+    long generations = iniParams.getEntryAs<long>(INI_GENALG_SECTION, INI_GENALG_GENERATIONS);
+    double crossover = iniParams.getEntryAs<double>(INI_GENALG_SECTION, INI_GENALG_CRPROB);
+    double mutprob = iniParams.getEntryAs<double>(INI_GENALG_SECTION, INI_GENALG_MUTPROB);
+    double mutrange = iniParams.getEntryAs<double>(INI_GENALG_SECTION, INI_GENALG_MUTRANGE);
+    double mutprec = iniParams.getEntryAs<double>(INI_GENALG_SECTION, INI_GENALG_MUTPREC);
+    double elitism = iniParams.getEntryAs<double>(INI_GENALG_SECTION, INI_GENALG_ELITISMRATE);
+
+    // Verify test parameters
+    if (generations <= 0)
     {
-        case enums::Algorithm::BlindSearch:
-            alg = new mdata::BlindSearch<T>();
-            break;
-        case enums::Algorithm::LocalSearch:
-            alg = new mdata::LocalSearch<T>();
-            break;
-        default:
-            cerr << "Invalid algorithm selected." << endl;
-            return 1;
+        cerr << "Experiment init failed: Param file [" << INI_GENALG_SECTION << "]->" 
+            << INI_GENALG_GENERATIONS << " entry missing or out of bounds." << endl;
+        return false;
+    }
+    else if (crossover <= 0)
+    {
+        cerr << "Experiment init failed: Param file [" << INI_GENALG_SECTION << "]->" 
+            << INI_GENALG_CRPROB << " entry missing or out of bounds." << endl;
+        return false;
+    }
+    else if (mutprob <= 0)
+    {
+        cerr << "Experiment init failed: Param file [" << INI_GENALG_SECTION << "]->" 
+            << INI_GENALG_MUTPROB << " entry missing or out of bounds." << endl;
+        return false;
+    }
+    else if (mutrange <= 0)
+    {
+        cerr << "Experiment init failed: Param file [" << INI_GENALG_SECTION << "]->" 
+            << INI_GENALG_MUTRANGE << " entry missing or out of bounds." << endl;
+        return false;
+    }
+    else if (mutprec <= 0)
+    {
+        cerr << "Experiment init failed: Param file [" << INI_GENALG_SECTION << "]->" 
+            << INI_GENALG_MUTPREC << " entry missing or out of bounds." << endl;
+        return false;
+    }
+    else if (elitism <= 0)
+    {
+        cerr << "Experiment init failed: Param file [" << INI_GENALG_SECTION << "]->" 
+            << INI_GENALG_ELITISMRATE << " entry missing or out of bounds." << endl;
+        return false;
     }
 
-    // Retrieve the function bounds
-    const RandomBounds<T>& funcBounds = vBounds[tParams.funcId - 1];
+    refParams.generations = static_cast<unsigned int>(generations);
+    refParams.crProb = crossover;
+    refParams.mutProb = mutprob;
+    refParams.mutRange = mutrange;
+    refParams.mutPrec = mutprec;
+    refParams.elitismRate = elitism;
 
-    // Retrieve the next available population object from the population pool
-    mdata::Population<T>* pop = popPoolRemove();
-
-    // Run the search algorithm one and record the results
-    auto tResult = alg->run(Functions<T>::get(tParams.funcId), funcBounds.min, funcBounds.max, pop, tParams.alpha);
-
-    // Place the population object back into the pool to be reused by anther thread
-    popPoolAdd(pop);
-
-    if (tResult.err)
-    {
-        cerr << "Error while testing function " << tParams.funcId << endl;
-        return tResult.err;
-    }
-
-    // Update results table and execution times table with algorithm results
-    tParams.resultsTable->setEntry(tParams.resultsRow, tParams.resultsCol, tResult.fitness);
-    tParams.execTimesTable->setEntry(tParams.execTimesRow, tParams.execTimesCol, tResult.execTime);
-
-    delete alg;
-    return 0; */
-
-    return 0;
+    return true;
 }
 
 /**
