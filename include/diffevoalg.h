@@ -1,12 +1,7 @@
 #ifndef __DIFFEVOALG_H
 #define __DIFFEVOALG_H
 
-#if defined (_MSC_VER)  // Visual studio
-    #define thread_local __declspec( thread )
-#elif defined (__GCC__) // GCC
-    #define thread_local __thread
-#endif
-
+#include <set>
 #include "population.h"
 #include "mfuncptr.h"
 #include "datatable.h"
@@ -28,7 +23,8 @@ namespace mfunc
         Rand1Bin = 6,
         RandToBest1Bin = 7,
         Best2Bin = 8,
-        Rand2Bin = 9
+        Rand2Bin = 9,
+        Count = 10
     };
 
     enum class PerturbedVector
@@ -68,18 +64,28 @@ namespace mfunc
     };
 
     template <class T>
-    struct DifferentialEvolution
+    class DifferentialEvolution
     {
-        static int run(DEParams<T> params);
-        static void mutateAndCrossover(mdata::Population<T>* mainPop, mdata::Population<T>* nextPop, size_t vIndex,
-            PerturbedVector pertV, NumberDiffVectors diffV, CrossoverStrat crossStrat);
-        static void select(mdata::Population<T>* mainPop, mdata::Population<T>* nextPop, size_t vIndex);
-        static T perturb(T* diffVectorPtrs, NumberDiffVectors numDiffVectors, size_t vIndex, double scalingFactor);
-        static void parseDEStrat(DEStrategy mainStrat, PerturbedVector& oPertv, NumberDiffVectors& oDiffv, CrossoverStrat& oCross);
-        static void crossover(size_t dim, T* p1, T* p2, double cr, T* outCh1, T* outCh2);
-        static void mutate(size_t dim, T* s, double mutProb, double mutRange, double mutPrec, T fMin, T fMax);
-        static void reduce(mdata::Population<T>* oldPop, mdata::Population<T>* newPop, size_t elitism);
+    public:
+        DifferentialEvolution();
+        ~DifferentialEvolution() = default;
+        int run(DEParams<T> params);
+    private:
+        std::random_device seed;
+        std::mt19937 engine;
+        std::uniform_real_distribution<double> rchance;
+
+        void mutateAndCrossover(mdata::Population<T>* mainPop, mdata::Population<T>* nextPop, const size_t vIndex, const size_t bestIndex,
+            const PerturbedVector pertV, const NumberDiffVectors diffV, const CrossoverStrat crossStrat, const double sf1, const double sf2, const double crFactor);
+        void select(mdata::Population<T>* mainPop, mdata::Population<T>* nextPop, size_t vIndex, mfunc::mfuncPtr<T> fPtr);
+        void parseDEStrat(DEStrategy mainStrat, PerturbedVector& oPertv, NumberDiffVectors& oDiffv, CrossoverStrat& oCross);
     };
+}
+
+template <class T>
+mfunc::DifferentialEvolution<T>::DifferentialEvolution()
+    : seed(), engine(seed()), rchance(0, 1)
+{ 
 }
 
 template <class T>
@@ -94,7 +100,6 @@ int mfunc::DifferentialEvolution<T>::run(DEParams<T> p)
 
     const size_t popSize = p.mainPop->getPopulationSize();
     const size_t dimSize = p.mainPop->getDimensionsSize();
-    const size_t elitism = p.elitismRate * (double)popSize;
 
     PerturbedVector pertV;
     NumberDiffVectors diffV;
@@ -106,41 +111,41 @@ int mfunc::DifferentialEvolution<T>::run(DEParams<T> p)
     p.mainPop->generate(p.fMinBound, p.fMaxBound);
     p.mainPop->calcAllFitness(p.fPtr);
 
+    size_t bestFitIndex = p.mainPop->getBestFitnessIndex();
+
     for (unsigned int gen = 0; gen < p.generations; gen++)
     {
         for (size_t i = 0; i < popSize; i++)
         {
-            mutateAndCrossover(p.mainPop, p.nextPop, i, pertV, diffV, crStrat);
-            select(p.mainPop, p.nextPop, i);
+            mutateAndCrossover(p.mainPop, p.nextPop, i, bestFitIndex, pertV, diffV, crStrat, p.scalingFactor1, p.scalingFactor2, p.crFactor);
+            p.nextPop->boundPopulation(i, p.fMinBound, p.fMaxBound);
+            select(p.mainPop, p.nextPop, i, p.fPtr);
         }
 
         // Swap the two populations
         auto tmp = p.mainPop;
-        p.mainPop = p.auxPop;
-        p.auxPop = tmp;
+        p.mainPop = p.nextPop;
+        p.nextPop = tmp;
 
-        p.fitnessTable->setEntry(gen, p.fitTableCol, p.mainPop->getBestFitness());
+        bestFitIndex = p.mainPop->getBestFitnessIndex();
+        p.fitnessTable->setEntry(gen, p.fitTableCol, p.mainPop->getFitness(bestFitIndex));
     }
 
     return 0;
 }
 
 template <class T>
-void mfunc::DifferentialEvolution<T>::mutateAndCrossover(mdata::Population<T>* mainPop, mdata::Population<T>* nextPop, 
-    size_t vIndex, PerturbedVector pertV, NumberDiffVectors diffV, CrossoverStrat crossStrat)
+void mfunc::DifferentialEvolution<T>::mutateAndCrossover(mdata::Population<T>* mainPop, mdata::Population<T>* nextPop, const size_t vIndex, 
+    const size_t bestIndex, const PerturbedVector pertV, const NumberDiffVectors diffV, const CrossoverStrat crossStrat, const double sf1, const double sf2, const double crFactor)
 {
-    static thread_local std::random_device seed;
-    static thread_local std::mt19937 engine(seed());
-    static thread_local std::uniform_real_distribution<double> rchance(0, 1);
-
-    const dim = mainPop->getDimensionsSize();
+    const size_t dim = mainPop->getDimensionsSize();
     std::uniform_int_distribution<long> rdim(0, dim - 1);
     size_t pertIndex = 0;
 
     switch (pertV)
     {
         case PerturbedVector::Best:
-            pertIndex = mainPop->getBestFitnessIndex();
+            pertIndex = bestIndex;
             break;
         case PerturbedVector::Random:
             do
@@ -153,45 +158,95 @@ void mfunc::DifferentialEvolution<T>::mutateAndCrossover(mdata::Population<T>* m
             break;
     }
 
-    T* diffVectors[MAX_RAND_VECTOR_SELECT];
-    unsigned int numRandIndex = 2;
+    std::set<size_t> randVectorIndices;
+
+    unsigned int numRandVectors = 2;
     if (diffV == NumberDiffVectors::Two)
-        numRandIndex = 4;
+        numRandVectors = 4;
 
-    for (unsigned int i = 0; i < numRandIndex;)
+    while (randVectorIndices.size() < numRandVectors)
     {
+        auto rIndex = rdim(engine);
+        if (rIndex != pertIndex && rIndex != bestIndex)
+            randVectorIndices.insert(rIndex);
+    }
 
+    T* randV[MAX_RAND_VECTOR_SELECT] = { };
+    int rvIndex = 0;
+
+    for (auto it = randVectorIndices.begin(); it != randVectorIndices.end(); it++)
+    {
+        randV[rvIndex] = mainPop->getPopulationPtr(*it);
+        rvIndex++;
+    }
+
+    T* curVParent = mainPop->getPopulationPtr(vIndex);
+    T* curVPert = mainPop->getPopulationPtr(pertIndex);
+
+    nextPop->copyPopulation(vIndex, curVParent);
+
+    T* curVNext = nextPop->getPopulationPtr(vIndex);
+    T* curVBest = mainPop->getPopulationPtr(bestIndex);
+
+    size_t count = 0;
+
+    if (crossStrat == CrossoverStrat::Exponential)
+    {
+        size_t d = rdim(engine);
+
+        do
+        {
+            if (pertV == PerturbedVector::RandToBest)
+            {
+                curVNext[d] = curVParent[d] + (sf2 * (curVBest[d] - curVParent[d])) + (sf1 * (randV[0][d] - randV[1][d]));
+            }
+            else
+            {
+                if (numRandVectors == 2)
+                    curVNext[d] = curVPert[d] + (sf1 * (randV[0][d] - randV[1][d]));
+                else
+                    curVNext[d] = curVPert[d] + (sf1 * (randV[0][d] + randV[1][d] - randV[2][d] - randV[3][d]));
+            }
+            d = (d + 1) % dim;
+        } while (rchance(engine) < crFactor);
+    }
+    else
+    {
+        for (size_t d = 0; d < dim; d++)
+        {
+            if (rchance(engine) > crFactor)
+            continue;
+
+            if (pertV == PerturbedVector::RandToBest)
+            {
+                curVNext[d] = curVParent[d] + (sf2 * (curVBest[d] - curVParent[d])) + (sf1 * (randV[0][d] - randV[1][d]));
+            }
+            else
+            {
+                if (numRandVectors == 2)
+                    curVNext[d] = curVPert[d] + (sf1 * (randV[0][d] - randV[1][d]));
+                else
+                    curVNext[d] = curVPert[d] + (sf1 * (randV[0][d] + randV[1][d] - randV[2][d] - randV[3][d]));
+            }
+        }
     }
 }
 
 template <class T>
-void mfunc::DifferentialEvolution<T>::select(mdata::Population<T>* mainPop, mdata::Population<T>* nextPop, size_t vIndex)
+void mfunc::DifferentialEvolution<T>::select(mdata::Population<T>* mainPop, mdata::Population<T>* nextPop, size_t vIndex, mfunc::mfuncPtr<T> fPtr)
 {
-    nextPop->calcFitness(vIndex, p.fPtr);
+    nextPop->calcFitness(vIndex, fPtr);
     auto newFit = nextPop->getFitness(vIndex);
     auto oldFit = mainPop->getFitness(vIndex);
 
     if (newFit > oldFit)
     {
         // Reset (Discard) new pop vector back to last generation
-        p.nextPop->copyPopulation(vIndex, p.mainPop->getFitnessPtr(vIndex));
-        p.nextPop->setFitness(vIndex, oldFit);
+        nextPop->copyPopulation(vIndex, mainPop->getPopulationPtr(vIndex));
+        nextPop->setFitness(vIndex, oldFit);
     }
 }
 
-template <class T>
-T mfunc::DifferentialEvolution<T>::perturb(T* diffVectorPtrs, NumberDiffVectors numDiffVectors, size_t vIndex, double scalingFactor)
-{
-    if (numDiffVectors == NumberDiffVectors::One)
-    {
-        return scalingFactor * (diffVectorPtrs[0] - diffVectorPtrs[1]);
-    }
-    else
-    {
-        return scalingFactor * (diffVectorPtrs[0] + diffVectorPtrs[1] - diffVectorPtrs[2] - diffVectorPtrs[3]);
-    }
-}
-\
 template <class T>
 void mfunc::DifferentialEvolution<T>::parseDEStrat(DEStrategy mainStrat, PerturbedVector& oPertv, NumberDiffVectors& oDiffv, CrossoverStrat& oCross)
 {
@@ -212,7 +267,7 @@ void mfunc::DifferentialEvolution<T>::parseDEStrat(DEStrategy mainStrat, Perturb
             oDiffv = NumberDiffVectors::One;
             oCross = CrossoverStrat::Exponential;
             return;
-        case DEStrategy::Best2Exp
+        case DEStrategy::Best2Exp:
             oPertv = PerturbedVector::Best;
             oDiffv = NumberDiffVectors::Two;
             oCross = CrossoverStrat::Exponential;
@@ -237,7 +292,7 @@ void mfunc::DifferentialEvolution<T>::parseDEStrat(DEStrategy mainStrat, Perturb
             oDiffv = NumberDiffVectors::One;
             oCross = CrossoverStrat::Binomial;
             return;
-        case DEStrategy::Best2Bin
+        case DEStrategy::Best2Bin:
             oPertv = PerturbedVector::Best;
             oDiffv = NumberDiffVectors::Two;
             oCross = CrossoverStrat::Binomial;
@@ -252,74 +307,6 @@ void mfunc::DifferentialEvolution<T>::parseDEStrat(DEStrategy mainStrat, Perturb
             oDiffv = NumberDiffVectors::One;
             oCross = CrossoverStrat::Exponential;
             return;
-    }
-}
-
-template <class T>
-void mfunc::DifferentialEvolution<T>::crossover(size_t dim, T* p1, T* p2, double cr, T* outCh1, T* outCh2)
-{
-    static thread_local std::random_device seed;
-    static thread_local std::mt19937 engine(seed());
-    static thread_local std::uniform_real_distribution<double> rchance(0, 1);
-    std::uniform_int_distribution<long> rdim(0, dim - 1);
-
-    if (rchance(engine) < cr)
-    {
-        auto crIndex = rdim(engine);
-        for (size_t i = 0; i <= dim; i++)
-        {
-            if (i < crIndex)
-            {
-                outCh1[i] = p1[i];
-                outCh2[i] = p2[i];
-            }
-            else
-            {
-                outCh1[i] = p2[i];
-                outCh2[i] = p1[i];
-            } 
-        }
-    }
-    else
-    {
-        for (size_t i = 0; i < dim; i++)
-        {
-            outCh1[i] = p1[i];
-            outCh2[i] = p2[i];
-        }
-    }
-}
-
-template <class T>
-void mfunc::DifferentialEvolution<T>::mutate(size_t dim, T* s, double mutProb, double mutRange, double mutPrec, T fMin, T fMax)
-{
-    static thread_local std::random_device seed;
-    static thread_local std::mt19937 engine(seed());
-    static thread_local std::uniform_real_distribution<double> rchance(0, 1);
-    static thread_local std::uniform_real_distribution<double> rflip(-1, 1);
-
-    for (size_t i = 0; i < dim; i++)
-    {
-        if (rchance(engine) < mutProb)
-        {
-            s[i] += rflip(engine) * (fMax - fMin) * mutRange * std::pow(2, (-1 * rchance(engine) * mutPrec));
-
-            if (s[i] < fMin) s[i] = fMin;
-            else if (s[i] > fMax) s[i] = fMax;
-        }
-    }
-}
-
-template <class T>
-void mfunc::DifferentialEvolution<T>::reduce(mdata::Population<T>* oldPop, mdata::Population<T>* newPop, size_t elitism)
-{
-    oldPop->sortDescendByFitness();
-    newPop->sortDescendByFitness();
-    auto const lastIndex = newPop->getPopulationSize() - 1;
-
-    for (size_t i = 0; i < elitism; i++)
-    {
-        newPop->copyPopulation(lastIndex - i, oldPop->getPopulationPtr(i));
     }
 }
 

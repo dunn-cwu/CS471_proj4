@@ -23,6 +23,7 @@
 #define INI_TEST_SECTION "test"
 #define INI_FUNC_RANGE_SECTION "function_range"
 #define INI_GENALG_SECTION "genetic_alg"
+#define INI_DIFFEVO_SECTION "differential_evo"
 
 #define INI_TEST_POPULATION "population"
 #define INI_TEST_DIMENSIONS "dimensions"
@@ -38,6 +39,13 @@
 #define INI_GENALG_MUTRANGE "mutation_range"
 #define INI_GENALG_MUTPREC "mutation_precision"
 #define INI_GENALG_ELITISMRATE "elitism_rate"
+
+#define INI_DIFFEVO_GENERATIONS "generations"
+#define INI_DIFFEVO_CRPROB "crossover_prob"
+#define INI_DIFFEVO_SCALEF1 "scalefactor_1"
+#define INI_DIFFEVO_SCALEF2 "scalefactor_2"
+#define INI_DIFFEVO_STRATEGY "strategy"
+
 
 using namespace std;
 using namespace std::chrono;
@@ -193,6 +201,8 @@ int Experiment<T>::testAllFunc()
     {
         case Algorithm::GeneticAlgorithm:
             return testAllFunc_GA();
+        case Algorithm::DifferentialEvolution:
+            return testAllFunc_DE();
         default:
             return 1;
     }
@@ -209,9 +219,13 @@ int Experiment<T>::testAllFunc_GA()
     const GAParams<T>& paramTemplate = _p;
 
     mdata::DataTable<T> resultsTable(paramTemplate.generations, iterations);
+    mdata::DataTable<double> execTimesTable(NUM_FUNCTIONS, iterations);
 
     for (unsigned int c = 0; c < iterations; c++)
         resultsTable.setColLabel(c, std::string("Exp_") + std::to_string(c + 1));
+
+    for (unsigned int c = 0; c < iterations; c++)
+        execTimesTable.setColLabel(c, std::string("Exp_") + std::to_string(c + 1));
 
     std::vector<std::future<int>> testFutures;
 
@@ -239,7 +253,7 @@ int Experiment<T>::testAllFunc_GA()
             gaParams.elitismRate = paramTemplate.elitismRate;
 
             testFutures.emplace_back(
-                tPool->enqueue(&Experiment<T>::runGAThreaded, this, gaParams)
+                tPool->enqueue(&Experiment<T>::runGAThreaded, this, gaParams, &execTimesTable, f - 1, exp)
             );
         }
 
@@ -278,6 +292,15 @@ int Experiment<T>::testAllFunc_GA()
         }
     }
 
+    std::string timesFile = execTimesFile;
+    timesFile = std::regex_replace(timesFile, std::regex("\\%ALG%"), "GA");
+
+    if (!execTimesFile.empty())
+    {
+        execTimesTable.exportCSV(timesFile.c_str());
+        cout << "Exported execution times to: " << timesFile << endl << flush;
+    }
+
     high_resolution_clock::time_point t_end = high_resolution_clock::now();
     long double totalExecTime = static_cast<long double>(duration_cast<nanoseconds>(t_end - t_start).count()) / 1000000000.0L;
 
@@ -294,7 +317,7 @@ int Experiment<T>::testAllFunc_GA()
  * @return int An error code if any
  */
 template<class T>
-int Experiment<T>::runGAThreaded(GAParams<T> gaParams)
+int Experiment<T>::runGAThreaded(GAParams<T> gaParams, mdata::DataTable<double>* tTable, size_t tRow, size_t tCol)
 {
     // Retrieve the next two population objects from the population pool
     mdata::Population<T>* popMain = popPoolRemove();
@@ -302,11 +325,151 @@ int Experiment<T>::runGAThreaded(GAParams<T> gaParams)
     gaParams.mainPop = popMain;
     gaParams.auxPop = popAux;
 
-    GeneticAlgorithm<T>* gaAlg = new GeneticAlgorithm<T>;
-    int retVal = gaAlg->run(gaParams);
-    delete gaAlg;
+    high_resolution_clock::time_point t_start = high_resolution_clock::now();
+
+    GeneticAlgorithm<T> gaAlg;
+    int retVal = gaAlg.run(gaParams);
+
+    high_resolution_clock::time_point t_end = high_resolution_clock::now();
+    double execTimeMs = static_cast<double>(duration_cast<nanoseconds>(t_end - t_start).count()) / 1000000.0;
+
+    if (tTable != nullptr)
+        tTable->setEntry(tRow, tCol, execTimeMs);
 
     popPoolAdd(popAux);
+    popPoolAdd(popMain);
+
+    return retVal;
+}
+
+template<class T>
+int Experiment<T>::testAllFunc_DE()
+{
+    if (populationsPool.size() == 0) return 1;
+
+    DEParams<T> _p;
+    if (!loadDEParams(_p)) return 2;
+
+    const DEParams<T>& paramTemplate = _p;
+
+    mdata::DataTable<T> resultsTable(paramTemplate.generations, iterations);
+    mdata::DataTable<double> execTimesTable(NUM_FUNCTIONS, iterations);
+
+    for (unsigned int c = 0; c < iterations; c++)
+        resultsTable.setColLabel(c, std::string("Exp_") + std::to_string(c + 1));
+
+    for (unsigned int c = 0; c < iterations; c++)
+        execTimesTable.setColLabel(c, std::string("Exp_") + std::to_string(c + 1));
+
+    std::vector<std::future<int>> testFutures;
+
+    high_resolution_clock::time_point t_start = high_resolution_clock::now();
+
+    for (unsigned int f = 1; f <= mfunc::NUM_FUNCTIONS; f++)
+    {
+        resultsTable.clearData();
+
+        for (size_t exp = 0; exp < iterations; exp++)
+        {
+            DEParams<T> deParams;
+            deParams.fitnessTable = &resultsTable;
+            deParams.fitTableCol = exp;
+            deParams.mainPop = nullptr;
+            deParams.nextPop = nullptr;
+            deParams.fPtr = Functions<T>::get(f);
+            deParams.fMinBound = vBounds[f-1].min;
+            deParams.fMaxBound = vBounds[f-1].max;
+            deParams.generations = paramTemplate.generations;
+            deParams.crFactor = paramTemplate.crFactor;
+            deParams.scalingFactor1 = paramTemplate.scalingFactor1;
+            deParams.scalingFactor2 = paramTemplate.scalingFactor2;
+            deParams.strategy = paramTemplate.strategy;
+
+            testFutures.emplace_back(
+                tPool->enqueue(&Experiment<T>::runDEThreaded, this, deParams, &execTimesTable, f - 1, exp)
+            );
+        }
+
+        for (size_t futIndex = 0; futIndex < testFutures.size(); futIndex++)
+        {
+            auto& curFut = testFutures[futIndex];
+
+            if (!curFut.valid())
+            {
+                // An error occured with one of the threads
+                cerr << "Error: Thread future invalid.";
+                tPool->stopAndJoinAll();
+                return 1;
+            }
+
+            int errCode = curFut.get();
+            if (errCode)
+            {
+                // An error occurred while running the task.
+                // Bail out of function
+                tPool->stopAndJoinAll();
+                return errCode;
+            }
+        }
+
+        testFutures.clear();
+
+        std::string outFile = resultsFile;
+        outFile = std::regex_replace(outFile, std::regex("\\%ALG%"), "DE");
+        outFile = std::regex_replace(outFile, std::regex("\\%FUNC%"), std::to_string(f));
+
+        if (!outFile.empty())
+        {
+            resultsTable.exportCSV(outFile.c_str());
+            cout << "Exported function results to: " << outFile << endl << flush;
+        }
+    }
+
+    std::string timesFile = execTimesFile;
+    timesFile = std::regex_replace(timesFile, std::regex("\\%ALG%"), "DE");
+
+    if (!execTimesFile.empty())
+    {
+        execTimesTable.exportCSV(timesFile.c_str());
+        cout << "Exported execution times to: " << timesFile << endl << flush;
+    }
+
+    high_resolution_clock::time_point t_end = high_resolution_clock::now();
+    long double totalExecTime = static_cast<long double>(duration_cast<nanoseconds>(t_end - t_start).count()) / 1000000000.0L;
+
+    cout << endl << "Test finished. Total time: " << std::setprecision(7) << totalExecTime << " seconds." << endl;
+
+    return 0;
+}
+
+/**
+ * @brief Executes a single iteration of a test with the given parameters
+ * 
+ * @tparam T The data type used by the test
+ * @param tParams The parameters used to set up the test
+ * @return int An error code if any
+ */
+template<class T>
+int Experiment<T>::runDEThreaded(DEParams<T> deParams, mdata::DataTable<double>* tTable, size_t tRow, size_t tCol)
+{
+    // Retrieve the next two population objects from the population pool
+    mdata::Population<T>* popMain = popPoolRemove();
+    mdata::Population<T>* popNext = popPoolRemove();
+    deParams.mainPop = popMain;
+    deParams.nextPop = popNext;
+
+    high_resolution_clock::time_point t_start = high_resolution_clock::now();
+
+    DifferentialEvolution<T> deAlg;
+    int retVal = deAlg.run(deParams);
+
+    high_resolution_clock::time_point t_end = high_resolution_clock::now();
+    double execTimeMs = static_cast<double>(duration_cast<nanoseconds>(t_end - t_start).count()) / 1000000.0;
+
+    if (tTable != nullptr)
+        tTable->setEntry(tRow, tCol, execTimeMs);
+
+    popPoolAdd(popNext);
     popPoolAdd(popMain);
 
     return retVal;
@@ -367,6 +530,56 @@ bool Experiment<T>::loadGAParams(GAParams<T>& refParams)
     refParams.mutRange = mutrange;
     refParams.mutPrec = mutprec;
     refParams.elitismRate = elitism;
+
+    return true;
+}
+
+template<class T>
+bool Experiment<T>::loadDEParams(DEParams<T>& refParams)
+{
+    // Extract test parameters from ini file
+    long generations = iniParams.getEntryAs<long>(INI_DIFFEVO_SECTION, INI_DIFFEVO_GENERATIONS);
+    double crossover = iniParams.getEntryAs<double>(INI_DIFFEVO_SECTION, INI_DIFFEVO_CRPROB);
+    double sf1 = iniParams.getEntryAs<double>(INI_DIFFEVO_SECTION, INI_DIFFEVO_SCALEF1);
+    double sf2 = iniParams.getEntryAs<double>(INI_DIFFEVO_SECTION, INI_DIFFEVO_SCALEF2);
+    int strat = iniParams.getEntryAs<int>(INI_DIFFEVO_SECTION, INI_DIFFEVO_STRATEGY);
+
+    if (generations <= 0)
+    {
+        cerr << "Experiment init failed: Param file [" << INI_DIFFEVO_SECTION << "]->" 
+            << INI_DIFFEVO_GENERATIONS << " entry missing or out of bounds." << endl;
+        return false;
+    }
+    else if (crossover <= 0)
+    {
+        cerr << "Experiment init failed: Param file [" << INI_DIFFEVO_SECTION << "]->" 
+            << INI_DIFFEVO_CRPROB << " entry missing or out of bounds." << endl;
+        return false;
+    }
+    else if (sf1 <= 0)
+    {
+        cerr << "Experiment init failed: Param file [" << INI_DIFFEVO_SECTION << "]->" 
+            << INI_DIFFEVO_SCALEF1 << " entry missing or out of bounds." << endl;
+        return false;
+    }
+    else if (sf2 <= 0)
+    {
+        cerr << "Experiment init failed: Param file [" << INI_DIFFEVO_SECTION << "]->" 
+            << INI_DIFFEVO_SCALEF2 << " entry missing or out of bounds." << endl;
+        return false;
+    }
+    else if (strat < 0 || strat >= static_cast<int>(DEStrategy::Count))
+    {
+        cerr << "Experiment init failed: Param file [" << INI_DIFFEVO_SECTION << "]->" 
+            << INI_DIFFEVO_STRATEGY << " entry missing or out of bounds." << endl;
+        return false;
+    }
+
+    refParams.generations = static_cast<unsigned int>(generations);
+    refParams.crFactor = crossover;
+    refParams.scalingFactor1 = sf1;
+    refParams.scalingFactor2 = sf2;
+    refParams.strategy = static_cast<DEStrategy>(strat);
 
     return true;
 }

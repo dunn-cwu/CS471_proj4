@@ -39,8 +39,9 @@ namespace mdata
         T* getPopulationPtr(size_t popIndex);
         void copyPopulation(size_t destIndex, T* srcPop);
         void copyPopulation(size_t destIndex, const std::vector<T>& srcPop);
+        void boundPopulation(size_t popIndex, T min, T max);
         void sortDescendByFitness();
-
+        
         void setFitnessNormalization(bool useNormalization);
 
         bool generate(T minBound, T maxBound);

@@ -121,6 +121,21 @@ void Population<T>::copyPopulation(size_t destIndex, const std::vector<T>& srcPo
 }
 
 template <class T>
+void Population<T>::boundPopulation(size_t popIndex, T min, T max)
+{
+    if (popIndex >= popSize) return;
+
+    auto v = getPopulationPtr(popIndex);
+    for (size_t i = 0; i < popDim; i++)
+    {
+        if (v[i] < min)
+            v[i] = min;
+        else if (v[i] > max)
+            v[i] = max;
+    }
+}
+
+template <class T>
 void Population<T>::sortDescendByFitness()
 {
     qs_fit_decend(0, popSize - 1);

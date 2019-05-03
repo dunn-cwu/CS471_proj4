@@ -24,6 +24,7 @@
 #include "testresult.h"
 #include "testparam.h"
 #include "geneticalg.h"
+#include "diffevoalg.h"
 
 namespace mfunc
 {
@@ -63,8 +64,12 @@ namespace mfunc
         ~Experiment();
         bool init(const char* paramFile);
         int testAllFunc();
+
         int testAllFunc_GA();
-        int runGAThreaded(GAParams<T> gaParams);
+        int runGAThreaded(GAParams<T> gaParams, mdata::DataTable<double>* tTable, size_t tRow, size_t tCol);
+
+        int testAllFunc_DE();
+        int runDEThreaded(DEParams<T> deParams, mdata::DataTable<double>* tTable, size_t tRow, size_t tCol);
     private:
         std::mutex popPoolMutex;
         util::IniReader iniParams; /** IniReader class instance for importing experiment parameters */
@@ -77,6 +82,7 @@ namespace mfunc
         Algorithm testAlg;
 
         bool loadGAParams(GAParams<T>& refParams);
+        bool loadDEParams(DEParams<T>& refParams);
 
         mdata::Population<T>* popPoolRemove();
         void popPoolAdd(mdata::Population<T>* popPtr);
