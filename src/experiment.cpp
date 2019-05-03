@@ -157,11 +157,11 @@ bool Experiment<T>::init(const char* paramFile)
         }
 
         // Allocate thread pool
-        /* if (!allocateThreadPool((size_t)numberThreads))
+        if (!allocateThreadPool((size_t)numberThreads))
         {
             cerr << "Experiment init failed: Unable to allocate thread pool." << endl;
             return false;
-        } */
+        }
 
         cout << "Started " << numberThreads << " worker threads ..." << endl;
 
@@ -238,14 +238,10 @@ int Experiment<T>::testAllFunc_GA()
             gaParams.mutPrec = paramTemplate.mutPrec;
             gaParams.elitismRate = paramTemplate.elitismRate;
 
-            runGAThreaded(gaParams);
-
-            // testFutures.emplace_back(
-            //         tPool->enqueue(&Experiment<T>::runGAThreaded, this, gaParams)
-            //     );
+            testFutures.emplace_back(
+                tPool->enqueue(&Experiment<T>::runGAThreaded, this, gaParams)
+            );
         }
-
-        /* auto it = testFutures.begin();
 
         for (size_t futIndex = 0; futIndex < testFutures.size(); futIndex++)
         {
@@ -269,7 +265,7 @@ int Experiment<T>::testAllFunc_GA()
             }
         }
 
-        testFutures.clear(); */
+        testFutures.clear();
 
         std::string outFile = resultsFile;
         outFile = std::regex_replace(outFile, std::regex("\\%ALG%"), "GA");
@@ -306,8 +302,9 @@ int Experiment<T>::runGAThreaded(GAParams<T> gaParams)
     gaParams.mainPop = popMain;
     gaParams.auxPop = popAux;
 
-    GeneticAlgorithm<T> gaAlg;
-    int retVal = gaAlg.run(gaParams);
+    GeneticAlgorithm<T>* gaAlg = new GeneticAlgorithm<T>;
+    int retVal = gaAlg->run(gaParams);
+    delete gaAlg;
 
     popPoolAdd(popAux);
     popPoolAdd(popMain);
