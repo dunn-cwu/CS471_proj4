@@ -345,6 +345,12 @@ size_t Population<T>::getMaxFitnessIndex()
     return maxIndex;
 }
 
+template<class T>
+T Population<T>::getBestFitness()
+{
+    return popFitness[getBestFitnessIndex()];
+}
+
 /**
  * @brief Returns a pointer to the current best fitness value.
  * The best fitness calculation depends on if normalization

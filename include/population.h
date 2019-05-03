@@ -57,6 +57,7 @@ namespace mdata
         T* getMinFitnessPtr();
         size_t getMinFitnessIndex();
 
+        T getBestFitness();
         T* getBestFitnessPtr();
         size_t getBestFitnessIndex();
 
