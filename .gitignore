@@ -1,6 +1,7 @@
 .vscode/
 build/
 docs/
+.DS_Store
 
 # ====== cmake files ======
 # https://github.com/github/gitignore/blob/master/CMake.gitignore
