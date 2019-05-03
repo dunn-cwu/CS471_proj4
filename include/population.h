@@ -74,7 +74,7 @@ namespace mdata
     private:
         const size_t popSize; /** Size of the population, and the number of rows in the popMatrix */
         const size_t popDim;  /** Dimensions of the population, and the number of columns in the popMatrix */
-        bool normFitness;
+        bool normFitness; /** Flag that specifies whether the fitness values should be normalized */
 
         T** popMatrix; /** Matrix of population values */
         T* popFitness; /** Array of fitness values */

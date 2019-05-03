@@ -189,7 +189,7 @@ bool Experiment<T>::init(const char* paramFile)
 }
 
 /**
- * @brief Executes all functions as specified in the CS471 project 2
+ * @brief Executes all functions as specified in the CS471 project 3
  * document, records results, and outputs the data as a *.csv file.
  * 
  * @return Returns 0 on success. Returns a non-zero error code on failure.
@@ -208,19 +208,28 @@ int Experiment<T>::testAllFunc()
     }
 }
 
+/**
+ * @brief Tests all 18 functions using the genetic algorithm and outputs results
+ * 
+ * @return int Non-zero error code on failure
+ */
 template<class T>
 int Experiment<T>::testAllFunc_GA()
 {
     if (populationsPool.size() == 0) return 1;
 
+    // Load genetic algorithm specific parameters from ini file
     GAParams<T> _p;
     if (!loadGAParams(_p)) return 2;
 
+    // Use those parameters as a template
     const GAParams<T>& paramTemplate = _p;
 
+    // Create results and times tables
     mdata::DataTable<T> resultsTable(paramTemplate.generations, iterations);
     mdata::DataTable<double> execTimesTable(NUM_FUNCTIONS, iterations);
 
+    // Set table column labels
     for (unsigned int c = 0; c < iterations; c++)
         resultsTable.setColLabel(c, std::string("Exp_") + std::to_string(c + 1));
 
@@ -231,12 +240,16 @@ int Experiment<T>::testAllFunc_GA()
 
     high_resolution_clock::time_point t_start = high_resolution_clock::now();
 
+    // Run each function a number of iterations
     for (unsigned int f = 1; f <= mfunc::NUM_FUNCTIONS; f++)
     {
+        // Reset results table
         resultsTable.clearData();
 
+        // Queue up all iterations for current function in thread pool
         for (size_t exp = 0; exp < iterations; exp++)
         {
+            // Set up genetic alg parameters
             GAParams<T> gaParams;
             gaParams.fitnessTable = &resultsTable;
             gaParams.fitTableCol = exp;
@@ -252,11 +265,13 @@ int Experiment<T>::testAllFunc_GA()
             gaParams.mutPrec = paramTemplate.mutPrec;
             gaParams.elitismRate = paramTemplate.elitismRate;
 
+            // Add iteration to thread pool
             testFutures.emplace_back(
                 tPool->enqueue(&Experiment<T>::runGAThreaded, this, gaParams, &execTimesTable, f - 1, exp)
             );
         }
 
+        // Join all thread futures and get result
         for (size_t futIndex = 0; futIndex < testFutures.size(); futIndex++)
         {
             auto& curFut = testFutures[futIndex];
@@ -279,8 +294,10 @@ int Experiment<T>::testAllFunc_GA()
             }
         }
 
+        // Clear thread futures
         testFutures.clear();
 
+        // Output results for current function
         std::string outFile = resultsFile;
         outFile = std::regex_replace(outFile, std::regex("\\%ALG%"), "GA");
         outFile = std::regex_replace(outFile, std::regex("\\%FUNC%"), std::to_string(f));
@@ -292,6 +309,7 @@ int Experiment<T>::testAllFunc_GA()
         }
     }
 
+    // Output total execution times for each function iteration
     std::string timesFile = execTimesFile;
     timesFile = std::regex_replace(timesFile, std::regex("\\%ALG%"), "GA");
 
@@ -327,12 +345,14 @@ int Experiment<T>::runGAThreaded(GAParams<T> gaParams, mdata::DataTable<double>*
 
     high_resolution_clock::time_point t_start = high_resolution_clock::now();
 
+    // Run 1 iteration of the genetic algorithm
     GeneticAlgorithm<T> gaAlg;
     int retVal = gaAlg.run(gaParams);
 
     high_resolution_clock::time_point t_end = high_resolution_clock::now();
     double execTimeMs = static_cast<double>(duration_cast<nanoseconds>(t_end - t_start).count()) / 1000000.0;
 
+    // Record execution time
     if (tTable != nullptr)
         tTable->setEntry(tRow, tCol, execTimeMs);
 
@@ -342,19 +362,28 @@ int Experiment<T>::runGAThreaded(GAParams<T> gaParams, mdata::DataTable<double>*
     return retVal;
 }
 
+/**
+ * @brief Tests all 18 functions using the differential evolution algorithm and outputs results
+ * 
+ * @return int Non-zero error code on failure
+ */
 template<class T>
 int Experiment<T>::testAllFunc_DE()
 {
     if (populationsPool.size() == 0) return 1;
 
+    // Load DE specific parameters from ini file
     DEParams<T> _p;
     if (!loadDEParams(_p)) return 2;
 
+    // Use those parameters as a template
     const DEParams<T>& paramTemplate = _p;
 
+    // Create results and times tables
     mdata::DataTable<T> resultsTable(paramTemplate.generations, iterations);
     mdata::DataTable<double> execTimesTable(NUM_FUNCTIONS, iterations);
 
+    // Set table column labels
     for (unsigned int c = 0; c < iterations; c++)
         resultsTable.setColLabel(c, std::string("Exp_") + std::to_string(c + 1));
 
@@ -365,12 +394,16 @@ int Experiment<T>::testAllFunc_DE()
 
     high_resolution_clock::time_point t_start = high_resolution_clock::now();
 
+    // Run each function a number of iterations
     for (unsigned int f = 1; f <= mfunc::NUM_FUNCTIONS; f++)
     {
+        // Reset results table
         resultsTable.clearData();
 
+        // Queue up all iterations for current function in thread pool
         for (size_t exp = 0; exp < iterations; exp++)
         {
+            // Set up genetic alg parameters
             DEParams<T> deParams;
             deParams.fitnessTable = &resultsTable;
             deParams.fitTableCol = exp;
@@ -385,11 +418,13 @@ int Experiment<T>::testAllFunc_DE()
             deParams.scalingFactor2 = paramTemplate.scalingFactor2;
             deParams.strategy = paramTemplate.strategy;
 
+            // Add iteration to thread pool
             testFutures.emplace_back(
                 tPool->enqueue(&Experiment<T>::runDEThreaded, this, deParams, &execTimesTable, f - 1, exp)
             );
         }
 
+        // Join all thread futures and get result
         for (size_t futIndex = 0; futIndex < testFutures.size(); futIndex++)
         {
             auto& curFut = testFutures[futIndex];
@@ -412,8 +447,10 @@ int Experiment<T>::testAllFunc_DE()
             }
         }
 
+        // Clear thread futures
         testFutures.clear();
 
+        // Output results for current function
         std::string outFile = resultsFile;
         outFile = std::regex_replace(outFile, std::regex("\\%ALG%"), "DE");
         outFile = std::regex_replace(outFile, std::regex("\\%FUNC%"), std::to_string(f));
@@ -425,6 +462,7 @@ int Experiment<T>::testAllFunc_DE()
         }
     }
 
+    // Output total execution times for each function iteration
     std::string timesFile = execTimesFile;
     timesFile = std::regex_replace(timesFile, std::regex("\\%ALG%"), "DE");
 
@@ -460,12 +498,14 @@ int Experiment<T>::runDEThreaded(DEParams<T> deParams, mdata::DataTable<double>*
 
     high_resolution_clock::time_point t_start = high_resolution_clock::now();
 
+    // Run 1 iteration of the differential evolution algorithm
     DifferentialEvolution<T> deAlg;
     int retVal = deAlg.run(deParams);
 
     high_resolution_clock::time_point t_end = high_resolution_clock::now();
     double execTimeMs = static_cast<double>(duration_cast<nanoseconds>(t_end - t_start).count()) / 1000000.0;
 
+    // Record execution time
     if (tTable != nullptr)
         tTable->setEntry(tRow, tCol, execTimeMs);
 
@@ -475,6 +515,12 @@ int Experiment<T>::runDEThreaded(DEParams<T> deParams, mdata::DataTable<double>*
     return retVal;
 }
 
+/**
+ * @brief Loads genetic algorithm specific parameters from the ini file
+ * 
+ * @param refParams Out reference variable for the GAParams struct
+ * @return Returns true on success, otherwise false
+ */
 template<class T>
 bool Experiment<T>::loadGAParams(GAParams<T>& refParams)
 {
@@ -534,6 +580,12 @@ bool Experiment<T>::loadGAParams(GAParams<T>& refParams)
     return true;
 }
 
+/**
+ * @brief Loads differential evolution algorithm specific parameters from the ini file
+ * 
+ * @param refParams Out reference variable for the GAParams struct
+ * @return Returns true on success, otherwise false
+ */
 template<class T>
 bool Experiment<T>::loadDEParams(DEParams<T>& refParams)
 {

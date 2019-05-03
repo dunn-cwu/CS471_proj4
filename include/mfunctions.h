@@ -163,9 +163,16 @@ namespace mfunc
     };
 }
 
+/**
+ * @brief Flag that keeps track if the call counters have been initialized to zero
+ */
 template <class T>
 bool mfunc::Functions<T>::fCountersInit = false;
 
+/**
+ * @brief Array of size_t values that stores the number of times each objective function
+ * has been called.
+ */
 template <class T>
 size_t mfunc::Functions<T>::fCallCounters[_NUM_FUNCTIONS];
 
@@ -742,6 +749,11 @@ bool mfunc::Functions<T>::exec(unsigned int f, T* v, size_t n, T& outResult)
     return true;
 }
 
+/**
+ * @brief Returns the number of times the specified function id has been executed
+ *
+ * @return size_t Number of times the given function id has been executed
+ */
 template <class T>
 size_t mfunc::Functions<T>::getCallCounter(unsigned int f)
 {
@@ -751,6 +763,9 @@ size_t mfunc::Functions<T>::getCallCounter(unsigned int f)
     return fCallCounters[f - 1];
 }
 
+/**
+ * @brief Resets all function call counters to zero
+ */
 template <class T>
 void mfunc::Functions<T>::resetCallCounters()
 {
@@ -758,6 +773,9 @@ void mfunc::Functions<T>::resetCallCounters()
         fCallCounters[i] = 0;
 }
 
+/**
+ * @brief Executed by the objective functions to increment their call counter
+ */
 template <class T>
 void mfunc::Functions<T>::fCounterInc(unsigned int f)
 {

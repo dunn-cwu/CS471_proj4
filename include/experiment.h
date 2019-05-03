@@ -3,7 +3,7 @@
  * @author Andrew Dunn (Andrew.Dunn@cwu.edu)
  * @brief Header file for the Experiment class.
  * Contains the basic logic and functions to run the cs471 project experiment.
- * @version 0.2
+ * @version 0.3
  * @date 2019-04-01
  * 
  * @copyright Copyright (c) 2019
@@ -21,8 +21,6 @@
 #include "inireader.h"
 #include "population.h"
 #include "threadpool.h"
-#include "testresult.h"
-#include "testparam.h"
 #include "geneticalg.h"
 #include "diffevoalg.h"
 
@@ -39,6 +37,9 @@ namespace mfunc
         T max = 0.0;
     };
 
+    /**
+     * @brief Simple enum that selects one of the evolutionary algorithms
+     */
     enum class Algorithm
     {
         GeneticAlgorithm = 0,

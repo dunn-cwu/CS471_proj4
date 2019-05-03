@@ -98,6 +98,14 @@ T* Population<T>::getPopulationPtr(size_t popIndex)
     return popMatrix[popIndex];
 }
 
+/**
+ * @brief Copies the values from another population vector into this
+ * population with the given destination index
+ * 
+ * @tparam T Data type of the population.
+ * @param destIndex Index of the population vector you wish to overwrite.
+ * @param srcPop Pointer to the source population vector that will be copied
+ */
 template <class T>
 void Population<T>::copyPopulation(size_t destIndex, T* srcPop)
 {
@@ -109,6 +117,14 @@ void Population<T>::copyPopulation(size_t destIndex, T* srcPop)
     }
 }
 
+/**
+ * @brief Copies the values from another population vector into this
+ * population with the given destination index
+ * 
+ * @tparam T Data type of the population.
+ * @param destIndex Index of the population vector you wish to overwrite.
+ * @param srcPop Reference to a vector containing the source population to copy
+ */
 template <class T>
 void Population<T>::copyPopulation(size_t destIndex, const std::vector<T>& srcPop)
 {
@@ -120,6 +136,15 @@ void Population<T>::copyPopulation(size_t destIndex, const std::vector<T>& srcPo
     }
 }
 
+/**
+ * @brief Ensures that the population with the given index is within
+ * the correct value bounds given as parameters
+ * 
+ * @tparam T Data type of the population.
+ * @param popIndex Index of the population to conduct the bounds check
+ * @param min Minimum bound 
+ * @param max Maximum bound
+ */
 template <class T>
 void Population<T>::boundPopulation(size_t popIndex, T min, T max)
 {
@@ -135,12 +160,25 @@ void Population<T>::boundPopulation(size_t popIndex, T min, T max)
     }
 }
 
+/**
+ * @brief Sorts the current population in descending order
+ * based on the current fitness values using quicksort
+ * 
+ * @tparam T Data type of the population.
+ */
 template <class T>
 void Population<T>::sortDescendByFitness()
 {
     qs_fit_decend(0, popSize - 1);
 }
 
+/**
+ * @brief Sets or unsets the flag that determines if fitness values
+ * should be normalized after calculation
+ * 
+ * @tparam T Data type of the population.
+ * @param useNormalization True if you want to enable fitness normalization
+ */
 template <class T>
 void Population<T>::setFitnessNormalization(bool useNormalization)
 {
@@ -371,6 +409,13 @@ size_t Population<T>::getMaxFitnessIndex()
     return maxIndex;
 }
 
+/**
+ * @brief Returns the value of the current best fitness.
+ * Best fitness depends on normalization flag
+ * 
+ * @tparam T Data type of the population.
+ * @return T Value of the current best fitness
+ */
 template<class T>
 T Population<T>::getBestFitness()
 {
@@ -408,6 +453,12 @@ size_t Population<T>::getBestFitnessIndex()
         return getMinFitnessIndex();    
 }
 
+/**
+ * @brief Returns the sum of all fitness values
+ * 
+ * @tparam T Data type of the population.
+ * @return T Sum of all fitness values
+ */
 template<class T>
 T Population<T>::getTotalFitness()
 {
@@ -421,6 +472,13 @@ T Population<T>::getTotalFitness()
     return sum;
 }
 
+/**
+ * @brief Returns the minimum cost value out of all populations.
+ * This value is different than the fitness if normalization is enabled.
+ * 
+ * @tparam T Data type of the population.
+ * @return T Value of minimum cost
+ */
 template<class T>
 T Population<T>::getMinCost()
 {
@@ -485,6 +543,14 @@ void Population<T>::outputFitness(std::ostream& outStream, const char* delim, co
         outStream << lineBreak;
 }
 
+/**
+ * @brief Helper function that returns a normalized fitness for the given cost
+ * 
+ * @tparam T Data type of the population.
+ * @param cost Cost value
+ * @param globalMinCost Current global minimum cost in population
+ * @return T Normalized fitness value
+ */
 template<class T>
 T Population<T>::normalizeCost(T cost, T globalMinCost)
 {
