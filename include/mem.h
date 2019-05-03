@@ -63,12 +63,20 @@ namespace util
      * @param a Pointer to array
      */
     template <class T = double>
-    void releaseArray(T*& a)
+    bool releaseArray(T*& a)
     {
-        if (a == nullptr) return;
+        if (a == nullptr) return true;
 
-        delete[] a;
-        a = nullptr;
+        try
+        {
+            delete[] a;
+            a = nullptr;
+            return true;
+        }
+        catch(...)
+        {
+            return false;
+        }
     }
 
     /**

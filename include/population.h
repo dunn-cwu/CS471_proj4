@@ -38,6 +38,7 @@ namespace mdata
         size_t getDimensionsSize();
         T* getPopulationPtr(size_t popIndex);
         void copyPopulation(size_t destIndex, T* srcPop);
+        void copyPopulation(size_t destIndex, const std::vector<T>& srcPop);
         void sortDescendByFitness();
 
         void setFitnessNormalization(bool useNormalization);
