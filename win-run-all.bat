@@ -1,3 +1,7 @@
+mkdir results
+mkdir results\genalg
+mkdir results\diffevo
+
 build\release\cs471_proj3.out params\GA_roulette.ini
 
 build\release\cs471_proj3.out params\DE_Strat1.ini
