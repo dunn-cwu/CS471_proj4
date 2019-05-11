@@ -21,8 +21,6 @@
 #include "inireader.h"
 #include "population.h"
 #include "threadpool.h"
-#include "geneticalg.h"
-#include "diffevoalg.h"
 
 namespace mfunc
 {
@@ -65,12 +63,6 @@ namespace mfunc
         ~Experiment();
         bool init(const char* paramFile);
         int testAllFunc();
-
-        int testAllFunc_GA();
-        int runGAThreaded(GAParams<T> gaParams, mdata::DataTable<double>* tTable, size_t tRow, size_t tCol);
-
-        int testAllFunc_DE();
-        int runDEThreaded(DEParams<T> deParams, mdata::DataTable<double>* tTable, size_t tRow, size_t tCol);
     private:
         std::mutex popPoolMutex;
         util::IniReader iniParams; /** IniReader class instance for importing experiment parameters */
@@ -80,10 +72,6 @@ namespace mfunc
         RandomBounds<T>* vBounds; /** An array of RandomBounds structs that holds the function bounds read from iniParams */
         ThreadPool* tPool; /** Pool of worker threads which are used to run multiple tests in parallel */
         size_t iterations; /** Number of iterations for the selected test algorithm */
-        Algorithm testAlg;
-
-        bool loadGAParams(GAParams<T>& refParams);
-        bool loadDEParams(DEParams<T>& refParams);
 
         mdata::Population<T>* popPoolRemove();
         void popPoolAdd(mdata::Population<T>* popPtr);

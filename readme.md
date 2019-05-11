@@ -1,5 +1,5 @@
 Course: CS471
-Assignment: Project 3
+Assignment: Project 4
 Student: Andrew Dunn
 Instructor: Dr. Donald Davendra
 
