@@ -18,6 +18,7 @@
 #include "datatable.h"
 #include "stringutils.h"
 #include "mem.h"
+#include "partswarm.h"
 
 // Ini file string sections and keys
 #define INI_TEST_SECTION "test"
@@ -175,6 +176,33 @@ bool Experiment<T>::init(const char* paramFile)
 template<class T>
 int Experiment<T>::testAllFunc()
 {
+    auto mainPop = popPoolRemove();
+    auto pbPop = popPoolRemove();
+
+    mdata::DataTable<T> resultsTable(iterations, 18);
+
+
+    for (unsigned int f = 1; f <= mfunc::NUM_FUNCTIONS; f++)
+    {
+         PSParams<T> params;
+        params.fitnessTable = &resultsTable;
+        params.fitTableCol = f - 1;
+        params.mainPop = mainPop;
+        params.pbPop = pbPop;
+        params.fPtr = mfunc::Functions<T>::get(f);
+        params.fMinBound = vBounds[f-1].min;
+        params.fMaxBound = vBounds[f-1].max;
+        params.iterations = iterations;
+        params.c1 = 0.6;
+        params.c2 = 0.4;
+        params.k = 0.8;
+
+        ParticleSwarm<T> pswarm;
+        pswarm.run(params);
+    }
+
+    resultsTable.exportCSV("testData.csv");
+
     return 0;
 }
 

@@ -9,12 +9,9 @@
  * @copyright Copyright (c) 2019
  * 
  */
-#include <new>
-#include <cmath>
-#include <iostream>
-#include <iomanip>
 #include "population.h"
 #include "mem.h"
+#include <new>
 
 using namespace mdata;
 using namespace util;
@@ -27,8 +24,7 @@ using namespace util;
  * @param dimensions Dimensions of the population.
  */
 template <class T>
-Population<T>::Population(size_t pSize, size_t dimensions) 
-    : popMatrix(nullptr), popFitness(nullptr), popCost(nullptr), popSize(pSize), popDim(dimensions), normFitness(false)
+Population<T>::Population(size_t pSize, size_t dimensions) : popMatrix(nullptr), popSize(pSize), popDim(dimensions)
 {
     if (!allocPopMatrix() || !allocPopFitness())
         throw std::bad_alloc();
@@ -93,96 +89,15 @@ size_t Population<T>::getDimensionsSize()
 template <class T>
 T* Population<T>::getPopulationPtr(size_t popIndex)
 {
-    if (popMatrix == nullptr || popIndex >= popSize) return nullptr;
+    if (popFitness == nullptr || popIndex >= popSize) return nullptr;
     
     return popMatrix[popIndex];
 }
 
-/**
- * @brief Copies the values from another population vector into this
- * population with the given destination index
- * 
- * @tparam T Data type of the population.
- * @param destIndex Index of the population vector you wish to overwrite.
- * @param srcPop Pointer to the source population vector that will be copied
- */
 template <class T>
-void Population<T>::copyPopulation(size_t destIndex, T* srcPop)
+T* Population<T>::getBestPopulationPtr()
 {
-    if (popFitness == nullptr || destIndex >= popSize) return;
-
-    for (size_t i = 0; i < popDim; i++)
-    {
-        popMatrix[destIndex][i] = srcPop[i];
-    }
-}
-
-/**
- * @brief Copies the values from another population vector into this
- * population with the given destination index
- * 
- * @tparam T Data type of the population.
- * @param destIndex Index of the population vector you wish to overwrite.
- * @param srcPop Reference to a vector containing the source population to copy
- */
-template <class T>
-void Population<T>::copyPopulation(size_t destIndex, const std::vector<T>& srcPop)
-{
-    if (popFitness == nullptr || destIndex >= popSize) return;
-
-    for (size_t i = 0; i < popDim && i < srcPop.size(); i++)
-    {
-        popMatrix[destIndex][i] = srcPop[i];
-    }
-}
-
-/**
- * @brief Ensures that the population with the given index is within
- * the correct value bounds given as parameters
- * 
- * @tparam T Data type of the population.
- * @param popIndex Index of the population to conduct the bounds check
- * @param min Minimum bound 
- * @param max Maximum bound
- */
-template <class T>
-void Population<T>::boundPopulation(size_t popIndex, T min, T max)
-{
-    if (popIndex >= popSize) return;
-
-    auto v = getPopulationPtr(popIndex);
-    for (size_t i = 0; i < popDim; i++)
-    {
-        if (v[i] < min)
-            v[i] = min;
-        else if (v[i] > max)
-            v[i] = max;
-    }
-}
-
-/**
- * @brief Sorts the current population in descending order
- * based on the current fitness values using quicksort
- * 
- * @tparam T Data type of the population.
- */
-template <class T>
-void Population<T>::sortDescendByFitness()
-{
-    qs_fit_decend(0, popSize - 1);
-}
-
-/**
- * @brief Sets or unsets the flag that determines if fitness values
- * should be normalized after calculation
- * 
- * @tparam T Data type of the population.
- * @param useNormalization True if you want to enable fitness normalization
- */
-template <class T>
-void Population<T>::setFitnessNormalization(bool useNormalization)
-{
-    normFitness = useNormalization;
+    return getPopulationPtr(getBestFitnessIndex());
 }
 
 /**
@@ -203,15 +118,15 @@ bool Population<T>::generate(T minBound, T maxBound)
     // Generate a new seed for the mersenne twister engine
     rgen = std::mt19937(rdev());
 
-    // Set up a uniform distribution for the random number generator with the correct function bounds
-    std::uniform_real_distribution<T> dist(minBound, maxBound);
+    // Set up a normal (bell-shaped) distribution for the random number generator with the correct function bounds
+    std::uniform_real_distribution<double> dist((double)minBound, (double)maxBound);
 
     // Generate values for all vectors in popMatrix
     for (size_t s = 0; s < popSize; s++)
     {
         for (size_t d = 0; d < popDim; d++)
         {
-            T rand = dist(rgen);
+            T rand = (T)dist(rgen);
             popMatrix[s][d] = rand;
         }
     }
@@ -255,49 +170,18 @@ bool Population<T>::calcFitness(size_t popIndex, mfunc::mfuncPtr<T> funcPtr)
 {
     if (popFitness == nullptr || popIndex >= popSize) return false;
 
-    if (normFitness)
-    {
-        popCost[popIndex] = funcPtr(popMatrix[popIndex], popDim);
-        popFitness[popIndex] = normalizeCost(popCost[popIndex], getMinCost());
-    }
-    else
-    {
-        popCost[popIndex] = funcPtr(popMatrix[popIndex], popDim);
-        popFitness[popIndex] = popCost[popIndex];
-    }
-    
+    popFitness[popIndex] = funcPtr(popMatrix[popIndex], popDim);
+
     return true;
 }
 
-/**
- * @brief Uses the given function pointer to calculate the fitness values for the
- * entire population matrix.
- * 
- * @tparam T Data type of the population.
- * @param popIndex Index of the population vector you wish to set the fitness for.
- * @param funcPtr Function pointer to the math function that will be used to calculate 
- * the fitness value.
- * @return Returns true on success, otherwise false.
- */
 template<class T>
 bool Population<T>::calcAllFitness(mfunc::mfuncPtr<T> funcPtr)
 {
-    if (popFitness == nullptr) return false;
-
-    auto globalMinCost = getMinCost();
-
     for (size_t i = 0; i < popSize; i++)
     {
-        if (normFitness)
-        {
-            popCost[i] = funcPtr(popMatrix[i], popDim);
-            popFitness[i] = normalizeCost(popCost[i], globalMinCost);
-        }
-        else
-        {
-            popCost[i] = funcPtr(popMatrix[i], popDim);
-            popFitness[i] = popCost[i];
-        }
+        if (!calcFitness(i, funcPtr))
+            return false;
     }
 
     return true;
@@ -334,98 +218,7 @@ T* Population<T>::getFitnessPtr(size_t popIndex)
 }
 
 /**
- * @brief Returns a std::vector of all current fitness values
- * 
- * @tparam T Data type of the population.
- * @return std::vector<T> std::vector of fitness values
- */
-template<class T>
-std::vector<T> Population<T>::getAllFitness()
-{
-    return std::vector<T>(popFitness[0], popFitness[popSize]);
-}
-
-/**
- * @brief Returns a pointer to the current min fitness value
- * 
- * @tparam T Data type of the population.
- * @return T* Pointer to the min fitness value
- */
-template<class T>
-T* Population<T>::getMinFitnessPtr()
-{
-    return &popFitness[getMinFitnessIndex()];
-}
-
-/**
- * @brief Returns the index of the current min fitness value
- * 
- * @tparam T Data type of the population.
- * @return size_t Index of the min fitness value
- */
-template<class T>
-size_t Population<T>::getMinFitnessIndex()
-{
-    size_t minIndex = 0;
-
-    for (size_t i = 1; i < popSize; i++)
-    {
-        if (popFitness[i] < popFitness[minIndex])
-            minIndex = i;
-    }
-
-    return minIndex;
-}
-
-/**
- * @brief Returns a pointer to the current max fitness value
- * 
- * @tparam T Data type of the population.
- * @return T* Pointer to the max fitness value
- */
-template<class T>
-T* Population<T>::getMaxFitnessPtr()
-{
-    return &popFitness[getMaxFitnessIndex()];
-}
-
-/**
- * @brief Returns the index of the current max fitness value
- * 
- * @tparam T Data type of the population.
- * @return size_t Index of the max fitness value
- */
-template<class T>
-size_t Population<T>::getMaxFitnessIndex()
-{
-    size_t maxIndex = 0;
-
-    for (size_t i = 1; i < popSize; i++)
-    {
-        if (popFitness[i] > popFitness[maxIndex])
-            maxIndex = i;
-    }
-
-    return maxIndex;
-}
-
-/**
- * @brief Returns the value of the current best fitness.
- * Best fitness depends on normalization flag
- * 
- * @tparam T Data type of the population.
- * @return T Value of the current best fitness
- */
-template<class T>
-T Population<T>::getBestFitness()
-{
-    return popFitness[getBestFitnessIndex()];
-}
-
-/**
- * @brief Returns a pointer to the current best fitness value.
- * The best fitness calculation depends on if normalization
- * is enabled.
+ * @brief Returns a pointer to the current best fitness value
  * 
  * @tparam T Data type of the population.
  * @return T* Pointer to the best fitness value
@@ -437,9 +230,7 @@ T* Population<T>::getBestFitnessPtr()
 }
 
 /**
- * @brief Returns the index of the current best fitness value.
- * The best fitness calculation depends on if normalization
- * is enabled.
+ * @brief Returns the index of the current best fitness value
  * 
  * @tparam T Data type of the population.
  * @return size_t Index of the best fitness value
@@ -447,50 +238,54 @@ T* Population<T>::getBestFitnessPtr()
 template<class T>
 size_t Population<T>::getBestFitnessIndex()
 {
-    if (normFitness)
-        return getMaxFitnessIndex();
-    else
-        return getMinFitnessIndex();    
-}
-
-/**
- * @brief Returns the sum of all fitness values
- * 
- * @tparam T Data type of the population.
- * @return T Sum of all fitness values
- */
-template<class T>
-T Population<T>::getTotalFitness()
-{
-    T sum = 0;
-
-    for (size_t i = 0; i < popSize; i++)
-    {
-        sum += popFitness[i];
-    }
-
-    return sum;
-}
-
-/**
- * @brief Returns the minimum cost value out of all populations.
- * This value is different than the fitness if normalization is enabled.
- * 
- * @tparam T Data type of the population.
- * @return T Value of minimum cost
- */
-template<class T>
-T Population<T>::getMinCost()
-{
-    T min = popCost[0];
+    size_t bestIndex = 0;
 
     for (size_t i = 1; i < popSize; i++)
     {
-        if (popCost[i] < min)
-            min = popCost[i];
+        if (popFitness[i] < popFitness[bestIndex])
+            bestIndex = i;
     }
 
-    return min;
+    return bestIndex;
+}
+
+template<class T>
+bool Population<T>::copyFrom(Population<T>* srcPtr, size_t srcIndex, size_t destIndex)
+{
+    if (srcPtr == nullptr) return false;
+
+    const size_t srcDim = srcPtr->getDimensionsSize();
+    if (srcDim != popDim) return false;
+
+    T* srcVector = srcPtr->getPopulationPtr(srcIndex);
+    T* destVector = getPopulationPtr(destIndex);
+
+    if (srcVector == nullptr || destVector == nullptr) return false;
+
+    copyArray<T>(srcVector, destVector, popDim);
+    setFitness(destIndex, srcPtr->getFitness(srcIndex));
+
+    return true;
+}
+
+template<class T>
+bool Population<T>::copyAllFrom(Population<T>* srcPtr)
+{
+    if (srcPtr == nullptr) return false;
+
+    const size_t srcSize = srcPtr->getPopulationSize();
+    const size_t srcDim = srcPtr->getDimensionsSize();
+
+    if (srcSize != popSize || srcDim != popDim)
+        return false;
+
+    for (size_t i = 0; i < popSize; i++)
+    {
+        if (!copyFrom(srcPtr, i, i))
+            return false;
+    }
+
+    return true;
 }
 
 /**
@@ -544,25 +339,6 @@ void Population<T>::outputFitness(std::ostream& outStream, const char* delim, co
 }
 
 /**
- * @brief Helper function that returns a normalized fitness for the given cost
- * 
- * @tparam T Data type of the population.
- * @param cost Cost value
- * @param globalMinCost Current global minimum cost in population
- * @return T Normalized fitness value
- */
-template<class T>
-T Population<T>::normalizeCost(T cost, T globalMinCost)
-{
-    T normOffset = 0;
-    if (globalMinCost < 0)
-        normOffset = -1 * globalMinCost;
-
-    return static_cast<T>(1.0) / (static_cast<T>(1.0) + std::abs(cost + normOffset));
-}
-
-
-/**
  * @brief Helper function that allocates the population matrix.
  * 
  * @tparam T Data type of the population.
@@ -604,10 +380,7 @@ bool Population<T>::allocPopFitness()
     popFitness = allocArray<T>(popSize);
     initArray<T>(popFitness, popSize, 0);
 
-    popCost = allocArray<T>(popSize);
-    initArray<T>(popCost, popSize, 0);
-
-    return popFitness != nullptr && popCost != nullptr;
+    return popFitness != nullptr;
 }
 
 /**
@@ -619,81 +392,6 @@ template <class T>
 void Population<T>::releasePopFitness()
 {
     releaseArray<T>(popFitness);
-    releaseArray<T>(popCost);
-}
-
-// ==========================================
-// Quicksort Implementation modified from:
-// https://www.geeksforgeeks.org/quick-sort/
-// ==========================================
-
-template <class T>
-void Population<T>::qs_swapval(T& a, T& b) 
-{ 
-    T t = a;
-    a = b;
-    b = t; 
-}
-
-template <class T>
-void Population<T>::qs_swapptr(T*& a, T*& b) 
-{ 
-    T* t = a;
-    a = b; 
-    b = t; 
-}
-
-template <class T>
-long Population<T>::part_fit_decend(long low, long high) 
-{ 
-    T pivot = popFitness[high]; // pivot 
-    long i = (low - 1);  // Index of smaller element 
-  
-    for (long j = low; j <= high- 1; j++) 
-    { 
-        if (popFitness[j] > pivot) 
-        { 
-            i++;    // increment index of smaller element 
-            qs_swapval(popFitness[i], popFitness[j]);
-            qs_swapval(popCost[i], popCost[j]);
-            qs_swapptr(popMatrix[i], popMatrix[j]);
-        } 
-    } 
-    qs_swapval(popFitness[i + 1], popFitness[high]); 
-    qs_swapval(popCost[i + 1], popCost[high]);
-    qs_swapptr(popMatrix[i + 1], popMatrix[high]);
-
-    return (i + 1); 
-} 
-  
-template <class T>
-void Population<T>::qs_fit_decend(long low, long high) 
-{ 
-    if (low < high) 
-    {
-        long pi = part_fit_decend(low, high); 
-  
-        // Separately sort elements before 
-        // partition and after partition 
-        qs_fit_decend(low, pi - 1); 
-        qs_fit_decend(pi + 1, high);
-    } 
-} 
-
-template <class T>
-void Population<T>::debugOutputAll()
-{
-    for (size_t i = 0; i < popSize; i++)
-    {
-        for (size_t d = 0; d < popDim; d++)
-        {
-            std::cout << std::setw(10) << popMatrix[i][d] << " ";
-        }
-
-        std::cout << " | " << std::setw(10) << popCost[i];
-
-        std::cout << " | " << std::setw(10) << popFitness[i] << std::endl;
-    }
 }
 
 // Explicit template specializations due to separate implementations in this CPP file
