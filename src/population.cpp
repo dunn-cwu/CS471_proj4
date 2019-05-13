@@ -250,6 +250,12 @@ size_t Population<T>::getBestFitnessIndex()
 }
 
 template<class T>
+T Population<T>::getBestFitness()
+{
+    return getFitness(getBestFitnessIndex());
+}
+
+template<class T>
 bool Population<T>::copyFrom(Population<T>* srcPtr, size_t srcIndex, size_t destIndex)
 {
     if (srcPtr == nullptr) return false;

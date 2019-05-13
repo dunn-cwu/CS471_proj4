@@ -18,7 +18,6 @@
 #include "datatable.h"
 #include "stringutils.h"
 #include "mem.h"
-#include "partswarm.h"
 
 // Ini file string sections and keys
 #define INI_TEST_SECTION "test"
@@ -176,6 +175,20 @@ bool Experiment<T>::init(const char* paramFile)
 template<class T>
 int Experiment<T>::testAllFunc()
 {
+    // testPS();
+
+    // cout << "Finished PS." << endl << flush;
+
+    testFF();
+
+    cout << "Finished FF." << endl << flush;
+
+    return 0;
+}
+
+template<class T>
+int Experiment<T>::testPS()
+{
     auto mainPop = popPoolRemove();
     auto pbPop = popPoolRemove();
 
@@ -184,7 +197,7 @@ int Experiment<T>::testAllFunc()
 
     for (unsigned int f = 1; f <= mfunc::NUM_FUNCTIONS; f++)
     {
-         PSParams<T> params;
+        PSParams<T> params;
         params.fitnessTable = &resultsTable;
         params.fitTableCol = f - 1;
         params.mainPop = mainPop;
@@ -201,9 +214,85 @@ int Experiment<T>::testAllFunc()
         pswarm.run(params);
     }
 
-    resultsTable.exportCSV("testData.csv");
+    popPoolAdd(mainPop);
+    popPoolAdd(pbPop);
+
+    resultsTable.exportCSV("PS_Results.csv");
 
     return 0;
+}
+
+template<class T>
+int Experiment<T>::testFF()
+{
+    mdata::DataTable<T> resultsTable(iterations, 18);
+
+    std::vector<std::future<int>> testFutures;
+
+    for (unsigned int f = 1; f <= mfunc::NUM_FUNCTIONS; f++)
+    {
+        FFParams<T> params;
+        params.fitnessTable = &resultsTable;
+        params.fitTableCol = f - 1;
+        params.mainPop = nullptr;
+        params.fPtr = mfunc::Functions<T>::get(f);
+        params.fMinBound = vBounds[f-1].min;
+        params.fMaxBound = vBounds[f-1].max;
+        params.iterations = iterations;
+        params.alpha = 0.5;
+        params.betamin = 0.2;
+        params.gamma = 1.0;
+
+        testFutures.emplace_back(
+                tPool->enqueue(&Experiment<T>::runFFThreaded, this, params)
+        );
+    }
+
+    cout << "Executing firefly ..." << endl << flush;
+
+    // Join all thread futures and get result
+    for (size_t futIndex = 0; futIndex < testFutures.size(); futIndex++)
+    {
+        auto& curFut = testFutures[futIndex];
+
+        if (!curFut.valid())
+        {
+            // An error occured with one of the threads
+            cerr << "Error: Thread future invalid.";
+            tPool->stopAndJoinAll();
+            return 1;
+        }
+
+        int errCode = curFut.get();
+        if (errCode)
+        {
+            // An error occurred while running the task.
+            // Bail out of function
+            tPool->stopAndJoinAll();
+            return errCode;
+        }
+    }
+
+    // Clear thread futures
+    testFutures.clear();
+
+    cout << "Results written to file" << endl;
+    resultsTable.exportCSV("FF_Results.csv");
+
+    return 0;
+}
+
+template<class T>
+int Experiment<T>::runFFThreaded(FFParams<T> params)
+{
+    auto mainPop = popPoolRemove();
+    params.mainPop = mainPop;
+
+    Firefly<T> ffly;
+    int ret = ffly.run(params);
+
+    popPoolAdd(mainPop);
+    return ret;
 }
 
 /**

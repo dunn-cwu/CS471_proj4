@@ -21,6 +21,8 @@
 #include "inireader.h"
 #include "population.h"
 #include "threadpool.h"
+#include "partswarm.h"
+#include "firefly.h"
 
 namespace mfunc
 {
@@ -63,6 +65,8 @@ namespace mfunc
         ~Experiment();
         bool init(const char* paramFile);
         int testAllFunc();
+        int testPS();
+        int testFF();
     private:
         std::mutex popPoolMutex;
         util::IniReader iniParams; /** IniReader class instance for importing experiment parameters */
@@ -72,6 +76,8 @@ namespace mfunc
         RandomBounds<T>* vBounds; /** An array of RandomBounds structs that holds the function bounds read from iniParams */
         ThreadPool* tPool; /** Pool of worker threads which are used to run multiple tests in parallel */
         size_t iterations; /** Number of iterations for the selected test algorithm */
+
+        int runFFThreaded(FFParams<T> params);
 
         mdata::Population<T>* popPoolRemove();
         void popPoolAdd(mdata::Population<T>* popPtr);

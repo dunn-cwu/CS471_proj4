@@ -48,6 +48,7 @@ namespace mdata
 
         T* getBestFitnessPtr();
         size_t getBestFitnessIndex();
+        T getBestFitness();
 
         bool copyFrom(Population<T>* srcPtr, size_t srcIndex, size_t destIndex);
         bool copyAllFrom(Population<T>* srcPtr);
