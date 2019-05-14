@@ -239,9 +239,9 @@ int Experiment<T>::testFF()
         params.fMinBound = vBounds[f-1].min;
         params.fMaxBound = vBounds[f-1].max;
         params.iterations = iterations;
-        params.alpha = 0.5;
-        params.betamin = 0.2;
-        params.gamma = 1.0;
+        params.alpha = 0.2;
+        params.betamin = 0.4;
+        params.gamma = 0.1;
 
         testFutures.emplace_back(
                 tPool->enqueue(&Experiment<T>::runFFThreaded, this, params)
@@ -271,12 +271,14 @@ int Experiment<T>::testFF()
             tPool->stopAndJoinAll();
             return errCode;
         }
+
+        cout << futIndex + 1 << ".." << flush;
     }
 
     // Clear thread futures
     testFutures.clear();
 
-    cout << "Results written to file" << endl;
+    cout << endl << "Results written to file" << endl;
     resultsTable.exportCSV("FF_Results.csv");
 
     return 0;
@@ -286,12 +288,15 @@ template<class T>
 int Experiment<T>::runFFThreaded(FFParams<T> params)
 {
     auto mainPop = popPoolRemove();
+    auto nextPop = popPoolRemove();
     params.mainPop = mainPop;
+    params.nextPop = nextPop;
 
     Firefly<T> ffly;
     int ret = ffly.run(params);
 
     popPoolAdd(mainPop);
+    popPoolAdd(nextPop);
     return ret;
 }
 

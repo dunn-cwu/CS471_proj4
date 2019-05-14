@@ -24,7 +24,8 @@ using namespace util;
  * @param dimensions Dimensions of the population.
  */
 template <class T>
-Population<T>::Population(size_t pSize, size_t dimensions) : popMatrix(nullptr), popSize(pSize), popDim(dimensions)
+Population<T>::Population(size_t pSize, size_t dimensions) 
+    : popMatrix(nullptr), popSize(pSize), popDim(dimensions), rdev(), rgen(rdev())
 {
     if (!allocPopMatrix() || !allocPopFitness())
         throw std::bad_alloc();
@@ -115,10 +116,7 @@ bool Population<T>::generate(T minBound, T maxBound)
 {   
     if (popMatrix == nullptr) return false;
 
-    // Generate a new seed for the mersenne twister engine
-    rgen = std::mt19937(rdev());
-
-    // Set up a normal (bell-shaped) distribution for the random number generator with the correct function bounds
+    // Set up a uniform distribution for the random number generator with the correct function bounds
     std::uniform_real_distribution<double> dist((double)minBound, (double)maxBound);
 
     // Generate values for all vectors in popMatrix
@@ -133,6 +131,25 @@ bool Population<T>::generate(T minBound, T maxBound)
 
     // Reset popFitness values to 0
     initArray<T>(popFitness, popSize, (T)0.0);
+
+    return true;
+}
+
+template <class T>
+bool Population<T>::generateSingle(size_t popIndex, T minBound, T maxBound)
+{
+    if (popMatrix == nullptr || popIndex >= popSize) return false;
+
+    // Set up a uniform distribution for the random number generator with the correct function bounds
+    std::uniform_real_distribution<double> dist((double)minBound, (double)maxBound);
+
+    for (size_t d = 0; d < popDim; d++)
+    {
+        T rand = (T)dist(rgen);
+        popMatrix[popIndex][d] = rand;
+    }
+
+    popFitness[popIndex] = 0;
 
     return true;
 }
@@ -253,6 +270,18 @@ template<class T>
 T Population<T>::getBestFitness()
 {
     return getFitness(getBestFitnessIndex());
+}
+
+template<class T>
+void Population<T>::sortFitnessAscend()
+{
+    qs_fit_ascend(0, popSize - 1);
+}
+
+template<class T>
+void Population<T>::sortFitnessDescend()
+{
+    qs_fit_descend(0, popSize - 1);
 }
 
 template<class T>
@@ -399,6 +428,97 @@ void Population<T>::releasePopFitness()
 {
     releaseArray<T>(popFitness);
 }
+
+// ==========================================
+// Quicksort Implementation modified from:
+// https://www.geeksforgeeks.org/quick-sort/
+// ==========================================
+
+template <class T>
+void Population<T>::qs_swapval(T& a, T& b) 
+{ 
+    T t = a;
+    a = b;
+    b = t; 
+}
+
+template <class T>
+void Population<T>::qs_swapptr(T*& a, T*& b) 
+{ 
+    T* t = a;
+    a = b; 
+    b = t; 
+}
+
+template <class T>
+long Population<T>::part_fit_ascend(long low, long high) 
+{ 
+    T pivot = popFitness[high]; // pivot 
+    long i = (low - 1);  // Index of smaller element 
+  
+    for (long j = low; j <= high- 1; j++) 
+    { 
+        if (popFitness[j] <= pivot) 
+        { 
+            i++;    // increment index of smaller element 
+            qs_swapval(popFitness[i], popFitness[j]);
+            qs_swapptr(popMatrix[i], popMatrix[j]);
+        } 
+    } 
+    qs_swapval(popFitness[i + 1], popFitness[high]); 
+    qs_swapptr(popMatrix[i + 1], popMatrix[high]);
+
+    return (i + 1); 
+} 
+  
+template <class T>
+void Population<T>::qs_fit_ascend(long low, long high) 
+{ 
+    if (low < high) 
+    {
+        long pi = part_fit_ascend(low, high); 
+  
+        // Separately sort elements before 
+        // partition and after partition 
+        qs_fit_ascend(low, pi - 1); 
+        qs_fit_ascend(pi + 1, high);
+    } 
+}
+
+template <class T>
+long Population<T>::part_fit_descend(long low, long high) 
+{ 
+    T pivot = popFitness[high]; // pivot 
+    long i = (low - 1);  // Index of smaller element 
+  
+    for (long j = low; j <= high- 1; j++) 
+    { 
+        if (popFitness[j] > pivot) 
+        { 
+            i++;    // increment index of smaller element 
+            qs_swapval(popFitness[i], popFitness[j]);
+            qs_swapptr(popMatrix[i], popMatrix[j]);
+        } 
+    } 
+    qs_swapval(popFitness[i + 1], popFitness[high]); 
+    qs_swapptr(popMatrix[i + 1], popMatrix[high]);
+
+    return (i + 1); 
+} 
+  
+template <class T>
+void Population<T>::qs_fit_descend(long low, long high) 
+{ 
+    if (low < high) 
+    {
+        long pi = part_fit_descend(low, high); 
+  
+        // Separately sort elements before 
+        // partition and after partition 
+        qs_fit_descend(low, pi - 1); 
+        qs_fit_descend(pi + 1, high);
+    } 
+} 
 
 // Explicit template specializations due to separate implementations in this CPP file
 template class mdata::Population<float>;

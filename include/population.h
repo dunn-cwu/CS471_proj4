@@ -39,6 +39,7 @@ namespace mdata
         T* getBestPopulationPtr();
 
         bool generate(T minBound, T maxBound);
+        bool generateSingle(size_t popIndex, T minBound, T maxBound);
         bool setFitness(size_t popIndex, T value);
         bool calcFitness(size_t popIndex, mfunc::mfuncPtr<T> funcPtr);
         bool calcAllFitness(mfunc::mfuncPtr<T> funcPtr);
@@ -49,6 +50,9 @@ namespace mdata
         T* getBestFitnessPtr();
         size_t getBestFitnessIndex();
         T getBestFitness();
+
+        void sortFitnessAscend();
+        void sortFitnessDescend();
 
         bool copyFrom(Population<T>* srcPtr, size_t srcIndex, size_t destIndex);
         bool copyAllFrom(Population<T>* srcPtr);
@@ -70,6 +74,14 @@ namespace mdata
 
         bool allocPopFitness();
         void releasePopFitness();
+
+         void qs_swapval(T& a, T& b);
+        void qs_swapptr(T*& a, T*& b);
+        long part_fit_ascend(long low, long high);
+        void qs_fit_ascend(long low, long high);
+
+        long part_fit_descend(long low, long high);
+        void qs_fit_descend(long low, long high);
     };
 }
 
