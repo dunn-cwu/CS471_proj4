@@ -21,6 +21,9 @@
 
 // Ini file string sections and keys
 #define INI_TEST_SECTION "test"
+#define INI_PSO_SECTION "particle_swarm"
+#define INI_FF_SECTION "firefly"
+#define INI_HS_SECTION "harmony_search"
 #define INI_FUNC_RANGE_SECTION "function_range"
 
 #define INI_TEST_POPULATION "population"
@@ -30,7 +33,15 @@
 #define INI_TEST_ALGORITHM "algorithm"
 #define INI_TEST_RESULTSFILE "results_file"
 #define INI_TEST_EXECTIMESFILE "exec_times_file"
+#define INI_TEST_POPULATIONFILE "population_file"
 
+#define INI_PSO_C1 "c1"
+#define INI_PSO_C2 "c2"
+#define INI_PSO_K "k"
+
+#define INI_FF_ALPHA "alpha"
+#define INI_FF_BETAMIN "betamin"
+#define INI_FF_GAMMA "gamma"
 
 using namespace std;
 using namespace std::chrono;
