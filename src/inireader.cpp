@@ -81,9 +81,9 @@ bool IniReader::entryExists(std::string section, std::string entry)
  * @return The value of the entry with the given entry key and section. 
  * Returns an empty string if the entry does not exist.
  */
-std::string IniReader::getEntry(std::string section, std::string entry)
+std::string IniReader::getEntry(std::string section, std::string entry, std::string defVal)
 {
-    if (!entryExists(section, entry)) return std::string();
+    if (!entryExists(section, entry)) return defVal;
 
     return iniMap[section][entry];
 }

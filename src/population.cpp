@@ -12,6 +12,7 @@
 #include "population.h"
 #include "mem.h"
 #include <new>
+#include <fstream>
 
 using namespace mdata;
 using namespace util;
@@ -273,6 +274,26 @@ T Population<T>::getBestFitness()
 }
 
 template<class T>
+size_t Population<T>::getWorstFitnessIndex()
+{
+    size_t worstIndex = 0;
+
+    for (size_t i = 1; i < popSize; i++)
+    {
+        if (popFitness[i] > popFitness[worstIndex])
+            worstIndex = i;
+    }
+
+    return worstIndex;
+}
+
+template<class T>
+T Population<T>::getWorstFitness()
+{
+    return getFitness(getWorstFitnessIndex());
+}
+
+template<class T>
 void Population<T>::sortFitnessAscend()
 {
     qs_fit_ascend(0, popSize - 1);
@@ -362,6 +383,22 @@ void Population<T>::outputPopulation(std::ostream& outStream, const char* delim,
 
         outStream << lineBreak;
     }
+}
+
+template<class T>
+bool Population<T>::outputPopulationCsv(std::string filePath)
+{
+    static const char* delim = ",";
+    static const char* newline = "\n";
+
+    std::ofstream file;
+    file.open(filePath, std::ios::out | std::ios::trunc);
+    if (!file.good()) return false;
+
+    outputPopulation(file, delim, newline);
+    file.close();
+
+    return true;
 }
 
 /**

@@ -22,7 +22,7 @@
 // Ini file string sections and keys
 #define INI_TEST_SECTION "test"
 #define INI_PSO_SECTION "particle_swarm"
-#define INI_FF_SECTION "firefly"
+#define INI_FA_SECTION "firefly"
 #define INI_HS_SECTION "harmony_search"
 #define INI_FUNC_RANGE_SECTION "function_range"
 
@@ -32,16 +32,36 @@
 #define INI_TEST_NUMTHREADS "num_threads"
 #define INI_TEST_ALGORITHM "algorithm"
 #define INI_TEST_RESULTSFILE "results_file"
+#define INI_TEST_WORSTFITNESSFILE "worst_fit_file"
 #define INI_TEST_EXECTIMESFILE "exec_times_file"
+#define INI_TEST_FUNCCALLSFILE "func_calls_file"
 #define INI_TEST_POPULATIONFILE "population_file"
 
 #define INI_PSO_C1 "c1"
 #define INI_PSO_C2 "c2"
 #define INI_PSO_K "k"
 
-#define INI_FF_ALPHA "alpha"
-#define INI_FF_BETAMIN "betamin"
-#define INI_FF_GAMMA "gamma"
+#define INI_FA_ALPHA "alpha"
+#define INI_FA_BETAMIN "betamin"
+#define INI_FA_GAMMA "gamma"
+
+#define INI_HS_HMCR "hmcr"
+#define INI_HS_PAR "par"
+#define INI_HS_BW "bw"
+
+#define PARAM_DEFAULT_PSO_C1 0.8
+#define PARAM_DEFAULT_PSO_C2 1.2
+#define PARAM_DEFAULT_PSO_K 1.0
+
+#define PARAM_DEFAULT_FA_ALPHA 0.5
+#define PARAM_DEFAULT_FA_BETAMIN 0.2
+#define PARAM_DEFAULT_FA_GAMMA 0.1
+
+#define PARAM_DEFAULT_HS_HMCR 0.9
+#define PARAM_DEFAULT_HS_PAR 0.4
+#define PARAM_DEFAULT_HS_BW 0.2
+
+#define RESULTSFILE_ALG_PATTERN "%ALG%"
 
 using namespace std;
 using namespace std::chrono;
@@ -95,7 +115,10 @@ bool Experiment<T>::init(const char* paramFile)
         long numberThreads = iniParams.getEntryAs<long>(INI_TEST_SECTION, INI_TEST_NUMTHREADS);
         unsigned int selectedAlg = iniParams.getEntryAs<unsigned int>(INI_TEST_SECTION, INI_TEST_ALGORITHM);
         resultsFile = iniParams.getEntry(INI_TEST_SECTION, INI_TEST_RESULTSFILE);
+        worstFitnessFile = iniParams.getEntry(INI_TEST_SECTION, INI_TEST_WORSTFITNESSFILE);
         execTimesFile = iniParams.getEntry(INI_TEST_SECTION, INI_TEST_EXECTIMESFILE);
+        funcCallsFile = iniParams.getEntry(INI_TEST_SECTION, INI_TEST_FUNCCALLSFILE);
+        populationsFile = iniParams.getEntry(INI_TEST_SECTION, INI_TEST_POPULATIONFILE);
 
         // Verify test parameters
         if (numberSol <= 0)
@@ -122,15 +145,21 @@ bool Experiment<T>::init(const char* paramFile)
                 << INI_TEST_NUMTHREADS << " entry missing or out of bounds: " << paramFile << endl;
             return false;
         }
+        else if (selectedAlg >= static_cast<unsigned int>(Algorithm::Count))
+        {
+            cerr << "Experiment init failed: Param file [test]->" 
+                << INI_TEST_ALGORITHM << " entry missing or out of bounds: " << paramFile << endl;
+            return false;
+        }
 
         // Cast iterations and test algorithm to correct types
         iterations = (size_t)numberIter;
+        selAlg = static_cast<Algorithm>(selectedAlg);
 
         // Print test parameters to console
         cout << "Population size: " << numberSol << endl;
         cout << "Dimensions: " << numberDim << endl;
         cout << "Iterations: " << iterations << endl;
-        // cout << "Algorithm: " << enums::AlgorithmNames::get(testAlg) << endl;
 
         // Allocate memory for all population objects. We need one for each thread to prevent conflicts.
         if (!allocatePopulationPool((size_t)numberThreads * 2, (size_t)numberSol, (size_t)numberDim))
@@ -186,32 +215,49 @@ bool Experiment<T>::init(const char* paramFile)
 template<class T>
 int Experiment<T>::testAllFunc()
 {
-    // testPS();
+    switch (selAlg)
+    {
+    case Algorithm::ParticleSwarm:
+        return testPS();
+        break;
+    case Algorithm::Firefly:
+        return testFA();
+        break;
+    case Algorithm::HarmonySearch:
+        return testHS();
+        break;
+    default:
+        cout << "Error: Invalid algorithm selected." << endl;
+        break;
+    }
 
-    // cout << "Finished PS." << endl << flush;
-
-    // testFA();
-
-    // cout << "Finished FF." << endl << flush;
-
-    testHS();
-
-    cout << "Finished HS." << endl << flush;
-
-    return 0;
+    return 1;
 }
 
 template<class T>
 int Experiment<T>::testPS()
 {
+    const PSParams<T> paramTemplate = createPSParamsTemplate();
     mdata::DataTable<T> resultsTable(iterations, 18);
-
+    mdata::DataTable<T> worstTable(iterations, 18);
+    mdata::DataTable<T> execTimesTable(1, 18);
+    mdata::DataTable<T> funcCallsTable(1, 18);
     std::vector<std::future<int>> testFutures;
+
+    mfunc::Functions<T>::resetCallCounters();
 
     for (unsigned int f = 1; f <= mfunc::NUM_FUNCTIONS; f++)
     {
-        PSParams<T> params;
-        params.fitnessTable = &resultsTable;
+        auto desc = mfunc::FunctionDesc::get(f);
+        resultsTable.setColLabel(f - 1, desc);
+        worstTable.setColLabel(f - 1, desc);
+        execTimesTable.setColLabel(f - 1, desc);
+        funcCallsTable.setColLabel(f - 1, desc);
+
+        PSParams<T> params(paramTemplate);
+        params.popFile = util::s_replace(populationsFile, "%FUNC%", std::to_string(f));
+        params.bestFitnessTable = &resultsTable;
+        params.worstFitnessTable = &worstTable;
         params.fitTableCol = f - 1;
         params.mainPop = nullptr;
         params.pbPop = nullptr;
@@ -219,38 +265,81 @@ int Experiment<T>::testPS()
         params.fMinBound = vBounds[f-1].min;
         params.fMaxBound = vBounds[f-1].max;
         params.iterations = iterations;
-        params.c1 = 0.6;
-        params.c2 = 0.4;
-        params.k = 0.8;
 
         testFutures.emplace_back(
-                tPool->enqueue(&Experiment<T>::runPSThreaded, this, params)
+                tPool->enqueue(&Experiment<T>::runPSThreaded, this, params, &execTimesTable, 0, f - 1)
         );
     }
 
     cout << "Executing particle swarm ..." << endl << flush;
 
+    // Wait for threads to finish running all functions
     waitThreadFutures(testFutures);
-
-    // Clear thread futures
     testFutures.clear();
 
-    cout << endl << "Results written to file" << endl;
-    resultsTable.exportCSV("PS_Results.csv");
+    cout << endl;
+
+    if (!funcCallsFile.empty())
+    {
+        for (unsigned int f = 1; f <= mfunc::NUM_FUNCTIONS; f++)
+            funcCallsTable.setEntry(0, f - 1, mfunc::Functions<T>::getCallCounter(f));
+
+        std::string outFile = util::s_replace(funcCallsFile, RESULTSFILE_ALG_PATTERN, "PSO");
+        if (funcCallsTable.exportCSV(outFile.c_str()))
+            cout << "Function call counts written to: " << outFile << endl;
+        else
+            cout << "Unable to function call counts file: " << outFile << endl;
+    }
+
+    if (!resultsFile.empty())
+    {
+        std::string outFile = util::s_replace(resultsFile, RESULTSFILE_ALG_PATTERN, "PSO");
+        if (resultsTable.exportCSV(outFile.c_str()))
+            cout << "Best fitness results written to: " << outFile << endl;
+        else
+            cout << "Unable to open results file: " << outFile << endl;
+    }
+
+    if (!worstFitnessFile.empty())
+    {
+        std::string outFile = util::s_replace(worstFitnessFile, RESULTSFILE_ALG_PATTERN, "PSO");
+        if (worstTable.exportCSV(outFile.c_str()))
+            cout << "Worst fitness results written to: " << outFile << endl;
+        else
+            cout << "Unable to open worst fitness file: " << outFile << endl;
+    }
+
+    if (!execTimesFile.empty())
+    {
+        std::string outFile = util::s_replace(execTimesFile, RESULTSFILE_ALG_PATTERN, "PSO");
+        if (execTimesTable.exportCSV(outFile.c_str()))
+            cout << "Execution times written to: " << outFile << endl;
+        else
+            cout << "Unable to open execution times file: " << outFile << endl;
+    }
 
     return 0;
 }
 
 template<class T>
-int Experiment<T>::runPSThreaded(PSParams<T> params)
+int Experiment<T>::runPSThreaded(PSParams<T> params, mdata::DataTable<T>* timesTable, size_t tRow, size_t tCol)
 {
     auto mainPop = popPoolRemove();
     auto pbPop = popPoolRemove();
     params.mainPop = mainPop;
     params.pbPop = pbPop;
 
+    high_resolution_clock::time_point t_start = high_resolution_clock::now();
+
     ParticleSwarm<T> pswarm;
     int ret = pswarm.run(params);
+
+    high_resolution_clock::time_point t_end = high_resolution_clock::now();
+    double execTimeMs = static_cast<double>(duration_cast<nanoseconds>(t_end - t_start).count()) / 1000000.0;
+
+    // Record execution time
+    if (timesTable != nullptr)
+        timesTable->setEntry(tRow, tCol, execTimeMs);
 
     popPoolAdd(mainPop);
     popPoolAdd(pbPop);
@@ -260,52 +349,108 @@ int Experiment<T>::runPSThreaded(PSParams<T> params)
 template<class T>
 int Experiment<T>::testFA()
 {
+    const FAParams<T> paramTemplate = createFAParamsTemplate();
     mdata::DataTable<T> resultsTable(iterations, 18);
-
+    mdata::DataTable<T> worstTable(iterations, 18);
+    mdata::DataTable<T> execTimesTable(1, 18);
+    mdata::DataTable<T> funcCallsTable(1, 18);
     std::vector<std::future<int>> testFutures;
+
+    mfunc::Functions<T>::resetCallCounters();
 
     for (unsigned int f = 1; f <= mfunc::NUM_FUNCTIONS; f++)
     {
-        FAParams<T> params;
-        params.fitnessTable = &resultsTable;
+        auto desc = mfunc::FunctionDesc::get(f);
+        resultsTable.setColLabel(f - 1, desc);
+        worstTable.setColLabel(f - 1, desc);
+        execTimesTable.setColLabel(f - 1, desc);
+        funcCallsTable.setColLabel(f - 1, desc);
+
+        FAParams<T> params(paramTemplate);
+        params.popFile = util::s_replace(populationsFile, "%FUNC%", std::to_string(f));
+        params.bestFitnessTable = &resultsTable;
+        params.worstFitnessTable = &worstTable;
         params.fitTableCol = f - 1;
         params.mainPop = nullptr;
         params.fPtr = mfunc::Functions<T>::get(f);
         params.fMinBound = vBounds[f-1].min;
         params.fMaxBound = vBounds[f-1].max;
         params.iterations = iterations;
-        params.alpha = 0.5;
-        params.betamin = 0.2;
-        params.gamma = 1;
 
         testFutures.emplace_back(
-                tPool->enqueue(&Experiment<T>::runFAThreaded, this, params)
+                tPool->enqueue(&Experiment<T>::runFAThreaded, this, params, &execTimesTable, 0, f - 1)
         );
     }
 
     cout << "Executing firefly ..." << endl << flush;
 
+    // Wait for all threads to finish
     waitThreadFutures(testFutures);
-
-    // Clear thread futures
     testFutures.clear();
 
-    cout << endl << "Results written to file" << endl;
-    resultsTable.exportCSV("FF_Results.csv");
+    cout << endl;
+
+    if (!funcCallsFile.empty())
+    {
+        for (unsigned int f = 1; f <= mfunc::NUM_FUNCTIONS; f++)
+            funcCallsTable.setEntry(0, f - 1, mfunc::Functions<T>::getCallCounter(f));
+
+        std::string outFile = util::s_replace(funcCallsFile, RESULTSFILE_ALG_PATTERN, "FA");
+        if (funcCallsTable.exportCSV(outFile.c_str()))
+            cout << "Function call counts written to: " << outFile << endl;
+        else
+            cout << "Unable to function call counts file: " << outFile << endl;
+    }
+
+    if (!resultsFile.empty())
+    {
+        std::string outFile = util::s_replace(resultsFile, RESULTSFILE_ALG_PATTERN, "FA");
+        if (resultsTable.exportCSV(outFile.c_str()))
+            cout << "Best fitness results written to: " << outFile << endl;
+        else
+            cout << "Unable to open results file: " << outFile << endl;
+    }
+
+    if (!worstFitnessFile.empty())
+    {
+        std::string outFile = util::s_replace(worstFitnessFile, RESULTSFILE_ALG_PATTERN, "FA");
+        if (worstTable.exportCSV(outFile.c_str()))
+            cout << "Worst fitness results written to: " << outFile << endl;
+        else
+            cout << "Unable to open worst fitness file: " << outFile << endl;
+    }
+
+    if (!execTimesFile.empty())
+    {
+        std::string outFile = util::s_replace(execTimesFile, RESULTSFILE_ALG_PATTERN, "FA");
+        if (execTimesTable.exportCSV(outFile.c_str()))
+            cout << "Execution times written to: " << outFile << endl;
+        else
+            cout << "Unable to open execution times file: " << outFile << endl;
+    }
 
     return 0;
 }
 
 template<class T>
-int Experiment<T>::runFAThreaded(FAParams<T> params)
+int Experiment<T>::runFAThreaded(FAParams<T> params, mdata::DataTable<T>* timesTable, size_t tRow, size_t tCol)
 {
     auto mainPop = popPoolRemove();
     auto nextPop = popPoolRemove();
     params.mainPop = mainPop;
     params.nextPop = nextPop;
 
+    high_resolution_clock::time_point t_start = high_resolution_clock::now();
+
     Firefly<T> ffly;
     int ret = ffly.run(params);
+
+    high_resolution_clock::time_point t_end = high_resolution_clock::now();
+    double execTimeMs = static_cast<double>(duration_cast<nanoseconds>(t_end - t_start).count()) / 1000000.0;
+
+    // Record execution time
+    if (timesTable != nullptr)
+        timesTable->setEntry(tRow, tCol, execTimeMs);
 
     popPoolAdd(mainPop);
     popPoolAdd(nextPop);
@@ -315,26 +460,36 @@ int Experiment<T>::runFAThreaded(FAParams<T> params)
 template<class T>
 int Experiment<T>::testHS()
 {
+    const HSParams<T> paramTemplate = createHSParamsTemplate();
     mdata::DataTable<T> resultsTable(iterations, 18);
-
+    mdata::DataTable<T> worstTable(iterations, 18);
+    mdata::DataTable<T> execTimesTable(1, 18);
+    mdata::DataTable<T> funcCallsTable(1, 18);
     std::vector<std::future<int>> testFutures;
+
+    mfunc::Functions<T>::resetCallCounters();
 
     for (unsigned int f = 1; f <= mfunc::NUM_FUNCTIONS; f++)
     {
-        HSParams<T> params;
-        params.fitnessTable = &resultsTable;
+        auto desc = mfunc::FunctionDesc::get(f);
+        resultsTable.setColLabel(f - 1, desc);
+        worstTable.setColLabel(f - 1, desc);
+        execTimesTable.setColLabel(f - 1, desc);
+        funcCallsTable.setColLabel(f - 1, desc);
+
+        HSParams<T> params(paramTemplate);
+        params.popFile = util::s_replace(populationsFile, "%FUNC%", std::to_string(f));
+        params.bestFitnessTable = &resultsTable;
+        params.worstFitnessTable = &worstTable;
         params.fitTableCol = f - 1;
         params.mainPop = nullptr;
         params.fPtr = mfunc::Functions<T>::get(f);
         params.fMinBound = vBounds[f-1].min;
         params.fMaxBound = vBounds[f-1].max;
         params.iterations = iterations;
-        params.hmcr = 0.9;
-        params.par = 0.4;
-        params.bw = 0.2;
 
         testFutures.emplace_back(
-                tPool->enqueue(&Experiment<T>::runHSThreaded, this, params)
+                tPool->enqueue(&Experiment<T>::runHSThreaded, this, params, &execTimesTable, 0, f - 1)
         );
     }
 
@@ -345,20 +500,67 @@ int Experiment<T>::testHS()
     // Clear thread futures
     testFutures.clear();
 
-    cout << endl << "Results written to file" << endl;
-    resultsTable.exportCSV("HS_Results.csv");
+    cout << endl;
+
+    if (!funcCallsFile.empty())
+    {
+        for (unsigned int f = 1; f <= mfunc::NUM_FUNCTIONS; f++)
+            funcCallsTable.setEntry(0, f - 1, mfunc::Functions<T>::getCallCounter(f));
+
+        std::string outFile = util::s_replace(funcCallsFile, RESULTSFILE_ALG_PATTERN, "HS");
+        if (funcCallsTable.exportCSV(outFile.c_str()))
+            cout << "Function call counts written to: " << outFile << endl;
+        else
+            cout << "Unable to function call counts file: " << outFile << endl;
+    }
+
+    if (!resultsFile.empty())
+    {
+        std::string outFile = util::s_replace(resultsFile, RESULTSFILE_ALG_PATTERN, "HS");
+        if (resultsTable.exportCSV(outFile.c_str()))
+            cout << "Best fitness results written to: " << outFile << endl;
+        else
+            cout << "Unable to open results file: " << outFile << endl;
+    }
+
+    if (!worstFitnessFile.empty())
+    {
+        std::string outFile = util::s_replace(worstFitnessFile, RESULTSFILE_ALG_PATTERN, "HS");
+        if (worstTable.exportCSV(outFile.c_str()))
+            cout << "Worst fitness results written to: " << outFile << endl;
+        else
+            cout << "Unable to open worst fitness file: " << outFile << endl;
+    }
+
+    if (!execTimesFile.empty())
+    {
+        std::string outFile = util::s_replace(execTimesFile, RESULTSFILE_ALG_PATTERN, "HS");
+        if (execTimesTable.exportCSV(outFile.c_str()))
+            cout << "Execution times written to: " << outFile << endl;
+        else
+            cout << "Unable to open execution times file: " << outFile << endl;
+    }
 
     return 0;
 }
 
 template<class T>
-int Experiment<T>::runHSThreaded(HSParams<T> params)
+int Experiment<T>::runHSThreaded(HSParams<T> params, mdata::DataTable<T>* timesTable, size_t tRow, size_t tCol)
 {
     auto mainPop = popPoolRemove();
     params.mainPop = mainPop;
 
+    high_resolution_clock::time_point t_start = high_resolution_clock::now();
+
     HarmonySearch<T> hsearch;
     int ret = hsearch.run(params);
+
+    high_resolution_clock::time_point t_end = high_resolution_clock::now();
+    double execTimeMs = static_cast<double>(duration_cast<nanoseconds>(t_end - t_start).count()) / 1000000.0;
+
+    // Record execution time
+    if (timesTable != nullptr)
+        timesTable->setEntry(tRow, tCol, execTimeMs);
 
     popPoolAdd(mainPop);
     return ret;
@@ -399,6 +601,43 @@ int Experiment<T>::waitThreadFutures(std::vector<std::future<int>>& testFutures)
 
     return 0;
 }
+
+template<class T>
+const PSParams<T> Experiment<T>::createPSParamsTemplate()
+{
+    PSParams<T> retParams;
+
+    retParams.c1 = iniParams.getEntryAs<double>(INI_PSO_SECTION, INI_PSO_C1, PARAM_DEFAULT_PSO_C1);
+    retParams.c2 = iniParams.getEntryAs<double>(INI_PSO_SECTION, INI_PSO_C2, PARAM_DEFAULT_PSO_C2);
+    retParams.k = iniParams.getEntryAs<double>(INI_PSO_SECTION, INI_PSO_K, PARAM_DEFAULT_PSO_K);
+
+    return retParams;
+}
+
+template<class T>
+const FAParams<T> Experiment<T>::createFAParamsTemplate()
+{
+    FAParams<T> retParams;
+
+    retParams.alpha = iniParams.getEntryAs<double>(INI_FA_SECTION, INI_FA_ALPHA, PARAM_DEFAULT_FA_ALPHA);
+    retParams.betamin = iniParams.getEntryAs<double>(INI_FA_SECTION, INI_FA_BETAMIN, PARAM_DEFAULT_FA_BETAMIN);
+    retParams.gamma = iniParams.getEntryAs<double>(INI_FA_SECTION, INI_FA_GAMMA, PARAM_DEFAULT_FA_GAMMA);
+
+    return retParams;
+}
+
+template<class T>
+const HSParams<T> Experiment<T>::createHSParamsTemplate()
+{
+    HSParams<T> retParams;
+
+    retParams.hmcr = iniParams.getEntryAs<double>(INI_HS_SECTION, INI_HS_HMCR, PARAM_DEFAULT_HS_HMCR);
+    retParams.par = iniParams.getEntryAs<double>(INI_HS_SECTION, INI_HS_PAR, PARAM_DEFAULT_HS_PAR);
+    retParams.bw = iniParams.getEntryAs<double>(INI_HS_SECTION, INI_HS_BW, PARAM_DEFAULT_HS_BW);
+
+    return retParams;
+}
+
 
 /**
  * @brief Removes a single Population object from the pool,

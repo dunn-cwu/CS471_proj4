@@ -10,8 +10,10 @@
 #include "datatable.h"
 #include "random"
 #include "mem.h"
+#include "stringutils.h"
 
 #define BETA_INIT 1.0
+#define POPFILE_GEN_PATTERN "%GEN%"
 
 namespace mfunc
 {
@@ -19,7 +21,8 @@ namespace mfunc
     struct FAParams
     {
         std::string popFile;
-        mdata::DataTable<T>* fitnessTable;
+        mdata::DataTable<T>* bestFitnessTable;
+        mdata::DataTable<T>* worstFitnessTable;
         size_t fitTableCol;
         mdata::Population<T>* mainPop;
         mdata::Population<T>* nextPop;
@@ -34,7 +37,8 @@ namespace mfunc
         FAParams()
         {
             popFile = "";
-            fitnessTable = nullptr;
+            bestFitnessTable = nullptr;
+            worstFitnessTable = nullptr;
             fitTableCol = 0;
             mainPop = nullptr;
             nextPop = nullptr;
@@ -108,7 +112,15 @@ int mfunc::Firefly<T>::run(FAParams<T> p)
         // p.nextPop->calcFitness(popSize - 1, p.fPtr);
 
         p.nextPop->sortFitnessDescend();
-        p.fitnessTable->setEntry(iter, p.fitTableCol, p.nextPop->getFitness(popSize - 1));
+
+        if (p.bestFitnessTable != nullptr)
+            p.bestFitnessTable->setEntry(iter, p.fitTableCol, p.nextPop->getFitness(popSize - 1));
+
+        if (p.worstFitnessTable != nullptr)
+            p.worstFitnessTable->setEntry(iter, p.fitTableCol, p.nextPop->getFitness(0));
+
+        if (!p.popFile.empty())
+            p.nextPop->outputPopulationCsv(util::s_replace(p.popFile, std::string(POPFILE_GEN_PATTERN), std::to_string(iter)));
     }
 
     util::releaseArray(solBuffer);

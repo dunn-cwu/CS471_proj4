@@ -7,13 +7,18 @@
 #include "datatable.h"
 #include "random"
 #include "mem.h"
+#include "stringutils.h"
+
+#define POPFILE_GEN_PATTERN "%GEN%"
 
 namespace mfunc
 {
     template <class T>
     struct HSParams
     {
-        mdata::DataTable<T>* fitnessTable;
+        std::string popFile;
+        mdata::DataTable<T>* bestFitnessTable;
+        mdata::DataTable<T>* worstFitnessTable;
         size_t fitTableCol;
         mdata::Population<T>* mainPop;
         mfuncPtr<T> fPtr;
@@ -26,7 +31,9 @@ namespace mfunc
 
         HSParams()
         {
-            fitnessTable = nullptr;
+            popFile = "";
+            bestFitnessTable = nullptr;
+            worstFitnessTable = nullptr;
             fitTableCol = 0;
             mainPop = nullptr;
             fPtr = nullptr;
@@ -97,7 +104,15 @@ int mfunc::HarmonySearch<T>::run(HSParams<T> p)
         }
 
         p.mainPop->sortFitnessAscend();
-        p.fitnessTable->setEntry(iter, p.fitTableCol, p.mainPop->getFitness(0));
+
+        if (p.bestFitnessTable != nullptr)
+            p.bestFitnessTable->setEntry(iter, p.fitTableCol, p.mainPop->getFitness(0));
+
+        if (p.worstFitnessTable != nullptr)
+            p.worstFitnessTable->setEntry(iter, p.fitTableCol, p.mainPop->getFitness(popSize - 1));
+
+        if (!p.popFile.empty())
+            p.mainPop->outputPopulationCsv(util::s_replace(p.popFile, std::string(POPFILE_GEN_PATTERN), std::to_string(iter)));
     }
 
     return 0;

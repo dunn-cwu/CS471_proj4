@@ -6,6 +6,9 @@
 #include "datatable.h"
 #include "random"
 #include "mem.h"
+#include "stringutils.h"
+
+#define POPFILE_GEN_PATTERN "%GEN%"
 
 namespace mfunc
 {
@@ -24,7 +27,9 @@ namespace mfunc
     template <class T>
     struct PSParams
     {
-        mdata::DataTable<T>* fitnessTable;
+        std::string popFile;
+        mdata::DataTable<T>* bestFitnessTable;
+        mdata::DataTable<T>* worstFitnessTable;
         size_t fitTableCol;
         mdata::Population<T>* mainPop;
         mdata::Population<T>* pbPop;
@@ -38,7 +43,9 @@ namespace mfunc
 
         PSParams()
         {
-            fitnessTable = nullptr;
+            popFile = "";
+            bestFitnessTable = nullptr;
+            worstFitnessTable = nullptr;
             fitTableCol = 0;
             mainPop = nullptr;
             pbPop = nullptr;
@@ -128,7 +135,14 @@ int mfunc::ParticleSwarm<T>::run(PSParams<T> p)
             globalBest.fitness = bestFitVal;
         }
 
-        p.fitnessTable->setEntry(iter, p.fitTableCol, globalBest.fitness);
+        if (p.bestFitnessTable != nullptr)
+            p.bestFitnessTable->setEntry(iter, p.fitTableCol, globalBest.fitness);
+
+        if (p.worstFitnessTable != nullptr)
+            p.worstFitnessTable->setEntry(iter, p.fitTableCol, p.mainPop->getWorstFitness());
+
+        if (!p.popFile.empty())
+            p.mainPop->outputPopulationCsv(util::s_replace(p.popFile, std::string(POPFILE_GEN_PATTERN), std::to_string(iter)));
     }
 
     return 0;

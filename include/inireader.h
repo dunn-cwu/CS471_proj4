@@ -51,12 +51,12 @@ namespace util
         bool openFile(std::string filePath);
         bool sectionExists(std::string section);
         bool entryExists(std::string section, std::string entry);
-        std::string getEntry(std::string section, std::string entry);
+        std::string getEntry(std::string section, std::string entry, std::string defVal = "");
 
         template <class T>
-        T getEntryAs(std::string section, std::string entry)
+        T getEntryAs(std::string section, std::string entry, T defVal = {})
         {
-            std::stringstream ss(getEntry(section, entry));
+            std::stringstream ss(getEntry(section, entry, std::to_string(defVal)));
             T retVal;
             ss >> retVal;
             return retVal;

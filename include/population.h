@@ -50,6 +50,8 @@ namespace mdata
         T* getBestFitnessPtr();
         size_t getBestFitnessIndex();
         T getBestFitness();
+        size_t getWorstFitnessIndex();
+        T getWorstFitness();
 
         void sortFitnessAscend();
         void sortFitnessDescend();
@@ -60,6 +62,8 @@ namespace mdata
 
         void outputPopulation(std::ostream& outStream, const char* delim, const char* lineBreak);
         void outputFitness(std::ostream& outStream, const char* delim, const char* lineBreak);
+
+        bool outputPopulationCsv(std::string filePath);
     private:
         const size_t popSize; /** Size of the population, and the number of rows in the popMatrix */
         const size_t popDim;  /** Dimensions of the population, and the number of columns in the popMatrix */
@@ -76,7 +80,7 @@ namespace mdata
         bool allocPopFitness();
         void releasePopFitness();
 
-         void qs_swapval(T& a, T& b);
+        void qs_swapval(T& a, T& b);
         void qs_swapptr(T*& a, T*& b);
         long part_fit_ascend(long low, long high);
         void qs_fit_ascend(long low, long high);

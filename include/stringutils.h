@@ -8,6 +8,8 @@
 #ifndef __STRINGUTILS_H
 #define __STRINGUTILS_H
 
+#include <string>
+#include <regex>
 #include <algorithm> 
 #include <functional> 
 #include <cctype>
@@ -15,6 +17,12 @@
 
 namespace util
 {
+    static inline std::string s_replace(std::string input, std::string pattern, std::string replacement)
+    {
+        pattern = std::string("\\") + pattern;
+        return std::regex_replace(input, std::regex(pattern), replacement);
+    }
+
     // =======================================================
     // The string functions below were written by Evan Teran
     // from Stack Overflow:

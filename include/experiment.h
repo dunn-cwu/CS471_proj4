@@ -43,9 +43,10 @@ namespace mfunc
      */
     enum class Algorithm
     {
-        GeneticAlgorithm = 0,
-        DifferentialEvolution = 1,
-        Count = 2
+        ParticleSwarm = 0,
+        Firefly = 1,
+        HarmonySearch = 2,
+        Count = 3
     };
 
     /**
@@ -74,16 +75,24 @@ namespace mfunc
         util::IniReader iniParams; /** IniReader class instance for importing experiment parameters */
         std::vector<mdata::Population<T>*> populationsPool; /** Pool of population objects used by the worker threads. 1 per thread. */
         std::string resultsFile;   /** The file path for the results output *.csv file */
+        std::string worstFitnessFile;   /** The file path for the worst fitness output *.csv file */
         std::string execTimesFile;   /** The file path for the exec times output *.csv file */
+        std::string funcCallsFile;   /** The file path for the function calls output *.csv file */
+        std::string populationsFile;   /** The file path for the populations output *.csv file */
         RandomBounds<T>* vBounds; /** An array of RandomBounds structs that holds the function bounds read from iniParams */
         ThreadPool* tPool; /** Pool of worker threads which are used to run multiple tests in parallel */
         size_t iterations; /** Number of iterations for the selected test algorithm */
+        Algorithm selAlg;
 
-        int runPSThreaded(PSParams<T> params);
-        int runFAThreaded(FAParams<T> params);
-        int runHSThreaded(HSParams<T> params);
+        int runPSThreaded(PSParams<T> params, mdata::DataTable<T>* timesTable, size_t tRow, size_t tCol);
+        int runFAThreaded(FAParams<T> params, mdata::DataTable<T>* timesTable, size_t tRow, size_t tCol);
+        int runHSThreaded(HSParams<T> params, mdata::DataTable<T>* timesTable, size_t tRow, size_t tCol);
 
         int waitThreadFutures(std::vector<std::future<int>>& futures);
+
+        const PSParams<T> createPSParamsTemplate();
+        const FAParams<T> createFAParamsTemplate();
+        const HSParams<T> createHSParamsTemplate();
 
         mdata::Population<T>* popPoolRemove();
         void popPoolAdd(mdata::Population<T>* popPtr);
