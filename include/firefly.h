@@ -4,6 +4,7 @@
 #define _USE_MATH_DEFINES
 
 #include <cmath>
+#include <string>
 #include "population.h"
 #include "mfuncptr.h"
 #include "datatable.h"
@@ -17,6 +18,7 @@ namespace mfunc
     template <class T>
     struct FAParams
     {
+        std:string popFile;
         mdata::DataTable<T>* fitnessTable;
         size_t fitTableCol;
         mdata::Population<T>* mainPop;
@@ -31,6 +33,7 @@ namespace mfunc
 
         FAParams()
         {
+            popFile = nullptr;
             fitnessTable = nullptr;
             fitTableCol = 0;
             mainPop = nullptr;
