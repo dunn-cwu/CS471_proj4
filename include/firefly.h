@@ -18,7 +18,7 @@ namespace mfunc
     template <class T>
     struct FAParams
     {
-        std:string popFile;
+        std::string popFile;
         mdata::DataTable<T>* fitnessTable;
         size_t fitTableCol;
         mdata::Population<T>* mainPop;
@@ -33,7 +33,7 @@ namespace mfunc
 
         FAParams()
         {
-            popFile = nullptr;
+            popFile = "";
             fitnessTable = nullptr;
             fitTableCol = 0;
             mainPop = nullptr;
