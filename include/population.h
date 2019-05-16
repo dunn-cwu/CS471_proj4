@@ -56,6 +56,7 @@ namespace mdata
 
         bool copyFrom(Population<T>* srcPtr, size_t srcIndex, size_t destIndex);
         bool copyAllFrom(Population<T>* srcPtr);
+        bool copyPopulation(T* src, size_t destIndex);
 
         void outputPopulation(std::ostream& outStream, const char* delim, const char* lineBreak);
         void outputFitness(std::ostream& outStream, const char* delim, const char* lineBreak);

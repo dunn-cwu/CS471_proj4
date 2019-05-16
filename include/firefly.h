@@ -15,7 +15,7 @@
 namespace mfunc
 {
     template <class T>
-    struct FFParams
+    struct FAParams
     {
         mdata::DataTable<T>* fitnessTable;
         size_t fitTableCol;
@@ -29,7 +29,7 @@ namespace mfunc
         double betamin;
         double gamma;
 
-        FFParams()
+        FAParams()
         {
             fitnessTable = nullptr;
             fitTableCol = 0;
@@ -51,14 +51,14 @@ namespace mfunc
     public:
         Firefly();
         ~Firefly() = default;
-        int run(FFParams<T> p);
+        int run(FAParams<T> p);
     private:
         std::random_device seed;
         std::mt19937 engine;
-        std::uniform_real_distribution<double> rchance;
+        std::uniform_real_distribution<T> rchance;
 
-        void evaluate(FFParams<T>& p, size_t firefly);
-        void move(FFParams<T>& p, size_t firefly_i, size_t firefly_j);
+        void evaluate(FAParams<T>& p, T* solBuffer, size_t firefly);
+        void move(FAParams<T>& p, T* solBuffer, size_t firefly_i, size_t firefly_j);
         T calcDistance(T* fv_i, T* fv_j, size_t dimSize);
     };
 }
@@ -70,7 +70,7 @@ mfunc::Firefly<T>::Firefly()
 }
 
 template <class T>
-int mfunc::Firefly<T>::run(FFParams<T> p)
+int mfunc::Firefly<T>::run(FAParams<T> p)
 {
     if (p.mainPop == nullptr || p.nextPop == nullptr || p.fPtr == nullptr)
         return 1;
@@ -79,11 +79,15 @@ int mfunc::Firefly<T>::run(FFParams<T> p)
     const size_t popSize = p.mainPop->getPopulationSize();
     const size_t dimSize = p.mainPop->getDimensionsSize();
 
-    if (!p.nextPop->generate(p.fMinBound, p.fMaxBound))
+    T* solBuffer = util::allocArray<T>(dimSize);
+    if (solBuffer == nullptr)
         return 2;
 
-    if (!p.nextPop->calcAllFitness(p.fPtr))
+    if (!p.nextPop->generate(p.fMinBound, p.fMaxBound))
         return 3;
+
+    if (!p.nextPop->calcAllFitness(p.fPtr))
+        return 4;
 
     p.nextPop->sortFitnessDescend();
 
@@ -94,7 +98,7 @@ int mfunc::Firefly<T>::run(FFParams<T> p)
 
         for (size_t firefly_i = 0; firefly_i < popSize; firefly_i++)
         {
-            evaluate(p, firefly_i);
+            evaluate(p, solBuffer, firefly_i);
         }
 
         // p.nextPop->generateSingle(popSize - 1, p.fMinBound, p.fMaxBound);
@@ -104,11 +108,13 @@ int mfunc::Firefly<T>::run(FFParams<T> p)
         p.fitnessTable->setEntry(iter, p.fitTableCol, p.nextPop->getFitness(popSize - 1));
     }
 
+    util::releaseArray(solBuffer);
+
     return 0;
 }
 
 template <class T>
-void mfunc::Firefly<T>::evaluate(FFParams<T>& p, size_t firefly_i)
+void mfunc::Firefly<T>::evaluate(FAParams<T>& p, T* solBuffer, size_t firefly_i)
 {
     const size_t popSize = p.mainPop->getPopulationSize();
     
@@ -118,22 +124,19 @@ void mfunc::Firefly<T>::evaluate(FFParams<T>& p, size_t firefly_i)
 
         if (p.nextPop->getFitness(firefly_i) < light_j)
         {
-            move(p, firefly_j, firefly_i);
+            move(p, solBuffer, firefly_j, firefly_i);
         }
     }
 }
 
 template <class T>
-void mfunc::Firefly<T>::move(FFParams<T>& p, size_t firefly_j, size_t firefly_i)
+void mfunc::Firefly<T>::move(FAParams<T>& p, T* solBuffer, size_t firefly_j, size_t firefly_i)
 {
     auto alphaDist = std::normal_distribution<T>(0, p.fMaxBound - p.fMinBound);
 
     const size_t dimSize = p.mainPop->getDimensionsSize();
 
     auto fv_j = p.mainPop->getPopulationPtr(firefly_j);
-    auto fv_i = p.mainPop->getPopulationPtr(firefly_i);
-
-    auto fv_j_next = p.nextPop->getPopulationPtr(firefly_j);
     auto fv_i_next = p.nextPop->getPopulationPtr(firefly_i);
 
     T r = calcDistance(fv_i_next, fv_j, dimSize);
@@ -142,15 +145,22 @@ void mfunc::Firefly<T>::move(FFParams<T>& p, size_t firefly_j, size_t firefly_i)
     for (size_t d = 0; d < dimSize; d++)
     {
         T alpha = p.alpha * (rchance(engine) - 0.5) * (std::abs(p.fMaxBound - p.fMinBound));
-        fv_j_next[d] = fv_j[d] + (beta * (fv_i_next[d] - fv_j[d])) + alpha;
+        solBuffer[d] = fv_j[d] + (beta * (fv_i_next[d] - fv_j[d])) + alpha;
 
-        if (fv_j_next[d] < p.fMinBound)
-            fv_j_next[d] = p.fMinBound;
-        else if (fv_j_next[d] > p.fMaxBound)
-            fv_j_next[d] = p.fMaxBound;
+        if (solBuffer[d] < p.fMinBound)
+            solBuffer[d] = p.fMinBound;
+        else if (solBuffer[d] > p.fMaxBound)
+            solBuffer[d] = p.fMaxBound;
     }
 
-    p.nextPop->calcFitness(firefly_j, p.fPtr);
+    T newFit = p.fPtr(solBuffer, dimSize);
+    T oldFit = p.nextPop->getFitness(firefly_j);
+
+    if (newFit < oldFit);
+    {
+        p.nextPop->copyPopulation(solBuffer, firefly_j);
+        p.nextPop->setFitness(firefly_j, newFit);
+    }
 }
 
 template <class T>

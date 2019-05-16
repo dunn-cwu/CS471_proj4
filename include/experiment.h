@@ -23,6 +23,7 @@
 #include "threadpool.h"
 #include "partswarm.h"
 #include "firefly.h"
+#include "harmsearch.h"
 
 namespace mfunc
 {
@@ -66,7 +67,8 @@ namespace mfunc
         bool init(const char* paramFile);
         int testAllFunc();
         int testPS();
-        int testFF();
+        int testFA();
+        int testHS();
     private:
         std::mutex popPoolMutex;
         util::IniReader iniParams; /** IniReader class instance for importing experiment parameters */
@@ -77,7 +79,11 @@ namespace mfunc
         ThreadPool* tPool; /** Pool of worker threads which are used to run multiple tests in parallel */
         size_t iterations; /** Number of iterations for the selected test algorithm */
 
-        int runFFThreaded(FFParams<T> params);
+        int runPSThreaded(PSParams<T> params);
+        int runFAThreaded(FAParams<T> params);
+        int runHSThreaded(HSParams<T> params);
+
+        int waitThreadFutures(std::vector<std::future<int>>& futures);
 
         mdata::Population<T>* popPoolRemove();
         void popPoolAdd(mdata::Population<T>* popPtr);

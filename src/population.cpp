@@ -323,6 +323,21 @@ bool Population<T>::copyAllFrom(Population<T>* srcPtr)
     return true;
 }
 
+template<class T>
+bool Population<T>::copyPopulation(T* src, size_t destIndex)
+{
+    T* destVect = getPopulationPtr(destIndex);
+    if (destVect == nullptr) 
+        return false;
+
+    for (size_t i = 0; i < popDim; i++)
+    {
+        destVect[i] = src[i];
+    }
+
+    return true;
+}
+
 /**
  * @brief Outputs all population data to the given output stream.
  * 

@@ -179,9 +179,13 @@ int Experiment<T>::testAllFunc()
 
     // cout << "Finished PS." << endl << flush;
 
-    testFF();
+    // testFA();
 
-    cout << "Finished FF." << endl << flush;
+    // cout << "Finished FF." << endl << flush;
+
+    testHS();
+
+    cout << "Finished HS." << endl << flush;
 
     return 0;
 }
@@ -189,19 +193,17 @@ int Experiment<T>::testAllFunc()
 template<class T>
 int Experiment<T>::testPS()
 {
-    auto mainPop = popPoolRemove();
-    auto pbPop = popPoolRemove();
-
     mdata::DataTable<T> resultsTable(iterations, 18);
 
+    std::vector<std::future<int>> testFutures;
 
     for (unsigned int f = 1; f <= mfunc::NUM_FUNCTIONS; f++)
     {
         PSParams<T> params;
         params.fitnessTable = &resultsTable;
         params.fitTableCol = f - 1;
-        params.mainPop = mainPop;
-        params.pbPop = pbPop;
+        params.mainPop = nullptr;
+        params.pbPop = nullptr;
         params.fPtr = mfunc::Functions<T>::get(f);
         params.fMinBound = vBounds[f-1].min;
         params.fMaxBound = vBounds[f-1].max;
@@ -210,20 +212,42 @@ int Experiment<T>::testPS()
         params.c2 = 0.4;
         params.k = 0.8;
 
-        ParticleSwarm<T> pswarm;
-        pswarm.run(params);
+        testFutures.emplace_back(
+                tPool->enqueue(&Experiment<T>::runPSThreaded, this, params)
+        );
     }
 
-    popPoolAdd(mainPop);
-    popPoolAdd(pbPop);
+    cout << "Executing particle swarm ..." << endl << flush;
 
+    waitThreadFutures(testFutures);
+
+    // Clear thread futures
+    testFutures.clear();
+
+    cout << endl << "Results written to file" << endl;
     resultsTable.exportCSV("PS_Results.csv");
 
     return 0;
 }
 
 template<class T>
-int Experiment<T>::testFF()
+int Experiment<T>::runPSThreaded(PSParams<T> params)
+{
+    auto mainPop = popPoolRemove();
+    auto pbPop = popPoolRemove();
+    params.mainPop = mainPop;
+    params.pbPop = pbPop;
+
+    ParticleSwarm<T> pswarm;
+    int ret = pswarm.run(params);
+
+    popPoolAdd(mainPop);
+    popPoolAdd(pbPop);
+    return ret;
+}
+
+template<class T>
+int Experiment<T>::testFA()
 {
     mdata::DataTable<T> resultsTable(iterations, 18);
 
@@ -231,7 +255,7 @@ int Experiment<T>::testFF()
 
     for (unsigned int f = 1; f <= mfunc::NUM_FUNCTIONS; f++)
     {
-        FFParams<T> params;
+        FAParams<T> params;
         params.fitnessTable = &resultsTable;
         params.fitTableCol = f - 1;
         params.mainPop = nullptr;
@@ -239,16 +263,102 @@ int Experiment<T>::testFF()
         params.fMinBound = vBounds[f-1].min;
         params.fMaxBound = vBounds[f-1].max;
         params.iterations = iterations;
-        params.alpha = 0.2;
-        params.betamin = 0.4;
-        params.gamma = 0.1;
+        params.alpha = 0.5;
+        params.betamin = 0.2;
+        params.gamma = 1;
 
         testFutures.emplace_back(
-                tPool->enqueue(&Experiment<T>::runFFThreaded, this, params)
+                tPool->enqueue(&Experiment<T>::runFAThreaded, this, params)
         );
     }
 
     cout << "Executing firefly ..." << endl << flush;
+
+    waitThreadFutures(testFutures);
+
+    // Clear thread futures
+    testFutures.clear();
+
+    cout << endl << "Results written to file" << endl;
+    resultsTable.exportCSV("FF_Results.csv");
+
+    return 0;
+}
+
+template<class T>
+int Experiment<T>::runFAThreaded(FAParams<T> params)
+{
+    auto mainPop = popPoolRemove();
+    auto nextPop = popPoolRemove();
+    params.mainPop = mainPop;
+    params.nextPop = nextPop;
+
+    Firefly<T> ffly;
+    int ret = ffly.run(params);
+
+    popPoolAdd(mainPop);
+    popPoolAdd(nextPop);
+    return ret;
+}
+
+template<class T>
+int Experiment<T>::testHS()
+{
+    mdata::DataTable<T> resultsTable(iterations, 18);
+
+    std::vector<std::future<int>> testFutures;
+
+    for (unsigned int f = 1; f <= mfunc::NUM_FUNCTIONS; f++)
+    {
+        HSParams<T> params;
+        params.fitnessTable = &resultsTable;
+        params.fitTableCol = f - 1;
+        params.mainPop = nullptr;
+        params.fPtr = mfunc::Functions<T>::get(f);
+        params.fMinBound = vBounds[f-1].min;
+        params.fMaxBound = vBounds[f-1].max;
+        params.iterations = iterations;
+        params.hmcr = 0.9;
+        params.par = 0.4;
+        params.bw = 0.2;
+
+        testFutures.emplace_back(
+                tPool->enqueue(&Experiment<T>::runHSThreaded, this, params)
+        );
+    }
+
+    cout << "Executing harmony search ..." << endl << flush;
+
+    waitThreadFutures(testFutures);
+
+    // Clear thread futures
+    testFutures.clear();
+
+    cout << endl << "Results written to file" << endl;
+    resultsTable.exportCSV("HS_Results.csv");
+
+    return 0;
+}
+
+template<class T>
+int Experiment<T>::runHSThreaded(HSParams<T> params)
+{
+    auto mainPop = popPoolRemove();
+    params.mainPop = mainPop;
+
+    HarmonySearch<T> hsearch;
+    int ret = hsearch.run(params);
+
+    popPoolAdd(mainPop);
+    return ret;
+}
+
+template<class T>
+int Experiment<T>::waitThreadFutures(std::vector<std::future<int>>& testFutures)
+{
+    cout << "Waiting for threads to finish ..." << endl << flush;
+
+    const size_t totalFutures = testFutures.size();
 
     // Join all thread futures and get result
     for (size_t futIndex = 0; futIndex < testFutures.size(); futIndex++)
@@ -268,6 +378,7 @@ int Experiment<T>::testFF()
         {
             // An error occurred while running the task.
             // Bail out of function
+            cerr << "Error: Threaded function returned error code: " << errCode << endl;
             tPool->stopAndJoinAll();
             return errCode;
         }
@@ -275,29 +386,7 @@ int Experiment<T>::testFF()
         cout << futIndex + 1 << ".." << flush;
     }
 
-    // Clear thread futures
-    testFutures.clear();
-
-    cout << endl << "Results written to file" << endl;
-    resultsTable.exportCSV("FF_Results.csv");
-
     return 0;
-}
-
-template<class T>
-int Experiment<T>::runFFThreaded(FFParams<T> params)
-{
-    auto mainPop = popPoolRemove();
-    auto nextPop = popPoolRemove();
-    params.mainPop = mainPop;
-    params.nextPop = nextPop;
-
-    Firefly<T> ffly;
-    int ret = ffly.run(params);
-
-    popPoolAdd(mainPop);
-    popPoolAdd(nextPop);
-    return ret;
 }
 
 /**
