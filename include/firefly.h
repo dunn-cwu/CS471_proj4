@@ -147,15 +147,14 @@ void mfunc::Firefly<T>::evaluate(FAParams<T>& p, T* solBuffer, size_t firefly_i)
 template <class T>
 void mfunc::Firefly<T>::move(FAParams<T>& p, T* solBuffer, size_t firefly_j, size_t firefly_i)
 {
-    auto alphaDist = std::normal_distribution<T>(0, p.fMaxBound - p.fMinBound);
-
     const size_t dimSize = p.mainPop->getDimensionsSize();
 
     auto fv_j = p.mainPop->getPopulationPtr(firefly_j);
     auto fv_i_next = p.nextPop->getPopulationPtr(firefly_i);
 
     T r = calcDistance(fv_i_next, fv_j, dimSize);
-    T beta = (BETA_INIT - p.betamin) * std::pow(static_cast<T>(M_E), -1 * p.gamma * r * r) + p.betamin;
+    T betaDist = std::pow(static_cast<T>(M_E), -1 * p.gamma * r);
+    T beta = (BETA_INIT - p.betamin) * betaDist + p.betamin;
 
     for (size_t d = 0; d < dimSize; d++)
     {
