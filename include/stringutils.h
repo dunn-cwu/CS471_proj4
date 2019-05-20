@@ -17,6 +17,14 @@
 
 namespace util
 {
+    /**
+     * @brief Utility function that replaces a substring in a parent string
+     * 
+     * @param input Parent string
+     * @param pattern Pattern to be replaced
+     * @param replacement Replacement substring
+     * @return Returns the modified string
+     */
     static inline std::string s_replace(std::string input, std::string pattern, std::string replacement)
     {
         pattern = std::string("\\") + pattern;

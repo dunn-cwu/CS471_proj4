@@ -2,8 +2,8 @@
  * @file main.cpp
  * @author Andrew Dunn (Andrew.Dunn@cwu.edu)
  * @brief Program entry point. 
- * Creates and runs CS471 project 3 experiment.
- * @version 0.3
+ * Creates and runs CS471 project 4 experiment.
+ * @version 0.4
  * @date 2019-04-01
  * 
  * @copyright Copyright (c) 2019
@@ -28,7 +28,7 @@ using namespace std;
 template<class T>
 int runExp(const char* paramFile)
 {
-   // Create an instance of the project 1 experiment class
+   // Create an instance of the experiment class
    mfunc::Experiment<T> ex;
 
    // Print size of selected data type in bits

@@ -3,7 +3,7 @@
  * @author Andrew Dunn (Andrew.Dunn@cwu.edu)
  * @brief Header file for the Experiment class.
  * Contains the basic logic and functions to run the cs471 project experiment.
- * @version 0.3
+ * @version 0.4
  * @date 2019-04-01
  * 
  * @copyright Copyright (c) 2019
@@ -39,7 +39,7 @@ namespace mfunc
     };
 
     /**
-     * @brief Simple enum that selects one of the evolutionary algorithms
+     * @brief Simple enum that selects one of the search algorithms
      */
     enum class Algorithm
     {
@@ -82,7 +82,7 @@ namespace mfunc
         RandomBounds<T>* vBounds; /** An array of RandomBounds structs that holds the function bounds read from iniParams */
         ThreadPool* tPool; /** Pool of worker threads which are used to run multiple tests in parallel */
         size_t iterations; /** Number of iterations for the selected test algorithm */
-        Algorithm selAlg;
+        Algorithm selAlg; /** Selected search algorithm to test */
 
         int runPSThreaded(PSParams<T> params, mdata::DataTable<T>* timesTable, size_t tRow, size_t tCol);
         int runFAThreaded(FAParams<T> params, mdata::DataTable<T>* timesTable, size_t tRow, size_t tCol);

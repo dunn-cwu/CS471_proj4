@@ -3,7 +3,7 @@
  * @author Andrew Dunn (Andrew.Dunn@cwu.edu)
  * @brief Implementation file for the Experiment class.
  * Contains the basic logic and functions to run the cs471 project experiment.
- * @version 0.2
+ * @version 0.4
  * @date 2019-04-01
  * 
  * @copyright Copyright (c) 2019
@@ -49,6 +49,7 @@
 #define INI_HS_PAR "par"
 #define INI_HS_BW "bw"
 
+// Default algorithm parameters
 #define PARAM_DEFAULT_PSO_C1 0.8
 #define PARAM_DEFAULT_PSO_C2 1.2
 #define PARAM_DEFAULT_PSO_K 1.0
@@ -207,7 +208,7 @@ bool Experiment<T>::init(const char* paramFile)
 }
 
 /**
- * @brief Executes all functions as specified in the CS471 project 3
+ * @brief Executes all functions as specified in the CS471 project 4
  * document, records results, and outputs the data as a *.csv file.
  * 
  * @return Returns 0 on success. Returns a non-zero error code on failure.
@@ -215,6 +216,7 @@ bool Experiment<T>::init(const char* paramFile)
 template<class T>
 int Experiment<T>::testAllFunc()
 {
+    // Run the selected algorithm
     switch (selAlg)
     {
     case Algorithm::ParticleSwarm:
@@ -234,9 +236,16 @@ int Experiment<T>::testAllFunc()
     return 1;
 }
 
+/**
+ * @brief Tests the particle swarm algorithm for all 18 functions
+ * and then outputs the results files
+ * 
+ * @return Returns a non-zero error code on failure, otherwise returns zero on success
+ */
 template<class T>
 int Experiment<T>::testPS()
 {
+    // Prepare alg parameter template struct and results tables
     const PSParams<T> paramTemplate = createPSParamsTemplate();
     mdata::DataTable<T> resultsTable(iterations, 18);
     mdata::DataTable<T> worstTable(iterations, 18);
@@ -244,16 +253,20 @@ int Experiment<T>::testPS()
     mdata::DataTable<T> funcCallsTable(1, 18);
     std::vector<std::future<int>> testFutures;
 
+    // Reset objective function call counters
     mfunc::Functions<T>::resetCallCounters();
 
+    // Queue up a threaded task for each of the 18 objective functions
     for (unsigned int f = 1; f <= mfunc::NUM_FUNCTIONS; f++)
     {
+        // Set results table column labels
         auto desc = mfunc::FunctionDesc::get(f);
         resultsTable.setColLabel(f - 1, desc);
         worstTable.setColLabel(f - 1, desc);
         execTimesTable.setColLabel(f - 1, desc);
         funcCallsTable.setColLabel(f - 1, desc);
 
+        // Create new parameters struct for current function and set parameters
         PSParams<T> params(paramTemplate);
         params.popFile = util::s_replace(populationsFile, "%FUNC%", std::to_string(f));
         params.bestFitnessTable = &resultsTable;
@@ -266,6 +279,7 @@ int Experiment<T>::testPS()
         params.fMaxBound = vBounds[f-1].max;
         params.iterations = iterations;
 
+        // Add search algorithm run to thread pool queue
         testFutures.emplace_back(
                 tPool->enqueue(&Experiment<T>::runPSThreaded, this, params, &execTimesTable, 0, f - 1)
         );
@@ -279,6 +293,7 @@ int Experiment<T>::testPS()
 
     cout << endl;
 
+    // Output objective function call counter values to .csv file
     if (!funcCallsFile.empty())
     {
         for (unsigned int f = 1; f <= mfunc::NUM_FUNCTIONS; f++)
@@ -291,6 +306,7 @@ int Experiment<T>::testPS()
             cout << "Unable to function call counts file: " << outFile << endl;
     }
 
+    // Output best fitness values to .csv file
     if (!resultsFile.empty())
     {
         std::string outFile = util::s_replace(resultsFile, RESULTSFILE_ALG_PATTERN, "PSO");
@@ -300,6 +316,7 @@ int Experiment<T>::testPS()
             cout << "Unable to open results file: " << outFile << endl;
     }
 
+    // Output worst fitness values to .csv file
     if (!worstFitnessFile.empty())
     {
         std::string outFile = util::s_replace(worstFitnessFile, RESULTSFILE_ALG_PATTERN, "PSO");
@@ -309,6 +326,7 @@ int Experiment<T>::testPS()
             cout << "Unable to open worst fitness file: " << outFile << endl;
     }
 
+    // Output execution times to .csv file
     if (!execTimesFile.empty())
     {
         std::string outFile = util::s_replace(execTimesFile, RESULTSFILE_ALG_PATTERN, "PSO");
@@ -321,9 +339,20 @@ int Experiment<T>::testPS()
     return 0;
 }
 
+/**
+ * @brief Runs a single instance of the particle 
+ * swarm algorithm from an asynchronous thread.
+ * 
+ * @param params Particle swarm parameters
+ * @param timesTable DataTable to store the resulting execution time
+ * @param tRow Row to store the execution time in the times table
+ * @param tCol Column to store the execution time in the times table
+ * @return Returns the error code resulting from particle swarm
+ */
 template<class T>
 int Experiment<T>::runPSThreaded(PSParams<T> params, mdata::DataTable<T>* timesTable, size_t tRow, size_t tCol)
 {
+    // Retrieve population objects from population pool
     auto mainPop = popPoolRemove();
     auto pbPop = popPoolRemove();
     params.mainPop = mainPop;
@@ -331,6 +360,7 @@ int Experiment<T>::runPSThreaded(PSParams<T> params, mdata::DataTable<T>* timesT
 
     high_resolution_clock::time_point t_start = high_resolution_clock::now();
 
+    // Run search algorithm with given parameters
     ParticleSwarm<T> pswarm;
     int ret = pswarm.run(params);
 
@@ -341,14 +371,22 @@ int Experiment<T>::runPSThreaded(PSParams<T> params, mdata::DataTable<T>* timesT
     if (timesTable != nullptr)
         timesTable->setEntry(tRow, tCol, execTimeMs);
 
+    // Place population objects back into the pool to be used by another thread
     popPoolAdd(mainPop);
     popPoolAdd(pbPop);
     return ret;
 }
 
+/**
+ * @brief Tests the firefly algorithm for all 18 functions
+ * and then outputs the results files
+ * 
+ * @return Returns a non-zero error code on failure, otherwise returns zero on success
+ */
 template<class T>
 int Experiment<T>::testFA()
 {
+    // Prepare alg parameter template struct and results tables
     const FAParams<T> paramTemplate = createFAParamsTemplate();
     mdata::DataTable<T> resultsTable(iterations, 18);
     mdata::DataTable<T> worstTable(iterations, 18);
@@ -356,16 +394,20 @@ int Experiment<T>::testFA()
     mdata::DataTable<T> funcCallsTable(1, 18);
     std::vector<std::future<int>> testFutures;
 
+    // Reset objective function call counters
     mfunc::Functions<T>::resetCallCounters();
 
+    // Queue up a threaded task for each of the 18 objective functions
     for (unsigned int f = 1; f <= mfunc::NUM_FUNCTIONS; f++)
     {
+        // Set results table column labels
         auto desc = mfunc::FunctionDesc::get(f);
         resultsTable.setColLabel(f - 1, desc);
         worstTable.setColLabel(f - 1, desc);
         execTimesTable.setColLabel(f - 1, desc);
         funcCallsTable.setColLabel(f - 1, desc);
 
+        // Create new parameters struct for current function and set parameters
         FAParams<T> params(paramTemplate);
         params.popFile = util::s_replace(populationsFile, "%FUNC%", std::to_string(f));
         params.bestFitnessTable = &resultsTable;
@@ -377,6 +419,7 @@ int Experiment<T>::testFA()
         params.fMaxBound = vBounds[f-1].max;
         params.iterations = iterations;
 
+        // Add search algorithm run to thread pool queue
         testFutures.emplace_back(
                 tPool->enqueue(&Experiment<T>::runFAThreaded, this, params, &execTimesTable, 0, f - 1)
         );
@@ -390,6 +433,7 @@ int Experiment<T>::testFA()
 
     cout << endl;
 
+    // Output objective function call counter values to .csv file
     if (!funcCallsFile.empty())
     {
         for (unsigned int f = 1; f <= mfunc::NUM_FUNCTIONS; f++)
@@ -402,6 +446,7 @@ int Experiment<T>::testFA()
             cout << "Unable to function call counts file: " << outFile << endl;
     }
 
+    // Output best fitness values to .csv file
     if (!resultsFile.empty())
     {
         std::string outFile = util::s_replace(resultsFile, RESULTSFILE_ALG_PATTERN, "FA");
@@ -411,6 +456,7 @@ int Experiment<T>::testFA()
             cout << "Unable to open results file: " << outFile << endl;
     }
 
+    // Output worst fitness values to .csv file
     if (!worstFitnessFile.empty())
     {
         std::string outFile = util::s_replace(worstFitnessFile, RESULTSFILE_ALG_PATTERN, "FA");
@@ -420,6 +466,7 @@ int Experiment<T>::testFA()
             cout << "Unable to open worst fitness file: " << outFile << endl;
     }
 
+    // Output execution times to .csv file
     if (!execTimesFile.empty())
     {
         std::string outFile = util::s_replace(execTimesFile, RESULTSFILE_ALG_PATTERN, "FA");
@@ -432,9 +479,20 @@ int Experiment<T>::testFA()
     return 0;
 }
 
+/**
+ * @brief Runs a single instance of the firefly 
+ * algorithm from an asynchronous thread.
+ * 
+ * @param params Firefly algorithm parameters
+ * @param timesTable DataTable to store the resulting execution time
+ * @param tRow Row to store the execution time in the times table
+ * @param tCol Column to store the execution time in the times table
+ * @return Returns the error code resulting from particle swarm
+ */
 template<class T>
 int Experiment<T>::runFAThreaded(FAParams<T> params, mdata::DataTable<T>* timesTable, size_t tRow, size_t tCol)
 {
+    // Retrieve population objects from population pool
     auto mainPop = popPoolRemove();
     auto nextPop = popPoolRemove();
     params.mainPop = mainPop;
@@ -442,6 +500,7 @@ int Experiment<T>::runFAThreaded(FAParams<T> params, mdata::DataTable<T>* timesT
 
     high_resolution_clock::time_point t_start = high_resolution_clock::now();
 
+    // Run search algorithm with given parameters
     Firefly<T> ffly;
     int ret = ffly.run(params);
 
@@ -452,14 +511,22 @@ int Experiment<T>::runFAThreaded(FAParams<T> params, mdata::DataTable<T>* timesT
     if (timesTable != nullptr)
         timesTable->setEntry(tRow, tCol, execTimeMs);
 
+    // Place population objects back into the pool to be used by another thread
     popPoolAdd(mainPop);
     popPoolAdd(nextPop);
     return ret;
 }
 
+/**
+ * @brief Tests the harmony search algorithm for all 18 functions
+ * and then outputs the results files
+ * 
+ * @return Returns a non-zero error code on failure, otherwise returns zero on success
+ */
 template<class T>
 int Experiment<T>::testHS()
 {
+    // Prepare alg parameter template struct and results tables
     const HSParams<T> paramTemplate = createHSParamsTemplate();
     mdata::DataTable<T> resultsTable(iterations, 18);
     mdata::DataTable<T> worstTable(iterations, 18);
@@ -467,16 +534,20 @@ int Experiment<T>::testHS()
     mdata::DataTable<T> funcCallsTable(1, 18);
     std::vector<std::future<int>> testFutures;
 
+    // Reset objective function call counters
     mfunc::Functions<T>::resetCallCounters();
 
+    // Queue up a threaded task for each of the 18 objective functions
     for (unsigned int f = 1; f <= mfunc::NUM_FUNCTIONS; f++)
     {
+        // Set results table column labels
         auto desc = mfunc::FunctionDesc::get(f);
         resultsTable.setColLabel(f - 1, desc);
         worstTable.setColLabel(f - 1, desc);
         execTimesTable.setColLabel(f - 1, desc);
         funcCallsTable.setColLabel(f - 1, desc);
 
+        // Create new parameters struct for current function and set parameters
         HSParams<T> params(paramTemplate);
         params.popFile = util::s_replace(populationsFile, "%FUNC%", std::to_string(f));
         params.bestFitnessTable = &resultsTable;
@@ -488,6 +559,7 @@ int Experiment<T>::testHS()
         params.fMaxBound = vBounds[f-1].max;
         params.iterations = iterations;
 
+        // Add search algorithm run to thread pool queue
         testFutures.emplace_back(
                 tPool->enqueue(&Experiment<T>::runHSThreaded, this, params, &execTimesTable, 0, f - 1)
         );
@@ -502,6 +574,7 @@ int Experiment<T>::testHS()
 
     cout << endl;
 
+    // Output objective function call counter values to .csv file
     if (!funcCallsFile.empty())
     {
         for (unsigned int f = 1; f <= mfunc::NUM_FUNCTIONS; f++)
@@ -514,6 +587,7 @@ int Experiment<T>::testHS()
             cout << "Unable to function call counts file: " << outFile << endl;
     }
 
+    // Output best fitness values to .csv file
     if (!resultsFile.empty())
     {
         std::string outFile = util::s_replace(resultsFile, RESULTSFILE_ALG_PATTERN, "HS");
@@ -523,6 +597,7 @@ int Experiment<T>::testHS()
             cout << "Unable to open results file: " << outFile << endl;
     }
 
+    // Output worst fitness values to .csv file
     if (!worstFitnessFile.empty())
     {
         std::string outFile = util::s_replace(worstFitnessFile, RESULTSFILE_ALG_PATTERN, "HS");
@@ -532,6 +607,7 @@ int Experiment<T>::testHS()
             cout << "Unable to open worst fitness file: " << outFile << endl;
     }
 
+    // Output execution times to .csv file
     if (!execTimesFile.empty())
     {
         std::string outFile = util::s_replace(execTimesFile, RESULTSFILE_ALG_PATTERN, "HS");
@@ -544,14 +620,26 @@ int Experiment<T>::testHS()
     return 0;
 }
 
+/**
+ * @brief Runs a single instance of the harmony 
+ * search algorithm from an asynchronous thread.
+ * 
+ * @param params Harmony search parameters
+ * @param timesTable DataTable to store the resulting execution time
+ * @param tRow Row to store the execution time in the times table
+ * @param tCol Column to store the execution time in the times table
+ * @return Returns the error code resulting from particle swarm
+ */
 template<class T>
 int Experiment<T>::runHSThreaded(HSParams<T> params, mdata::DataTable<T>* timesTable, size_t tRow, size_t tCol)
 {
+    // Retrieve population object from population pool
     auto mainPop = popPoolRemove();
     params.mainPop = mainPop;
 
     high_resolution_clock::time_point t_start = high_resolution_clock::now();
 
+    // Run search algorithm with given parameters
     HarmonySearch<T> hsearch;
     int ret = hsearch.run(params);
 
@@ -562,10 +650,18 @@ int Experiment<T>::runHSThreaded(HSParams<T> params, mdata::DataTable<T>* timesT
     if (timesTable != nullptr)
         timesTable->setEntry(tRow, tCol, execTimeMs);
 
+    // Place population object back into the pool to be used by another thread
     popPoolAdd(mainPop);
     return ret;
 }
 
+/**
+ * @brief Helper function that blocks until all asynchronous thread pool tasks
+ * have been completed.
+ * 
+ * @param testFutures Reference to the thread futures that need to be waited on
+ * @return Returns a non-zero error code on failure, otherwise returns zero
+ */
 template<class T>
 int Experiment<T>::waitThreadFutures(std::vector<std::future<int>>& testFutures)
 {
@@ -602,6 +698,12 @@ int Experiment<T>::waitThreadFutures(std::vector<std::future<int>>& testFutures)
     return 0;
 }
 
+/**
+ * @brief Helper function that loads the particle swarm specific parameters
+ * from the ini file and returns them in a PSParams object
+ * 
+ * @return Template PSParams object with loaded parameters
+ */
 template<class T>
 const PSParams<T> Experiment<T>::createPSParamsTemplate()
 {
@@ -614,6 +716,12 @@ const PSParams<T> Experiment<T>::createPSParamsTemplate()
     return retParams;
 }
 
+/**
+ * @brief Helper function that loads the firefly algorithm specific parameters
+ * from the ini file and returns them in a FAParams object
+ * 
+ * @return Template FAParams object with loaded parameters
+ */
 template<class T>
 const FAParams<T> Experiment<T>::createFAParamsTemplate()
 {
@@ -626,6 +734,12 @@ const FAParams<T> Experiment<T>::createFAParamsTemplate()
     return retParams;
 }
 
+/**
+ * @brief Helper function that loads the harmony search specific parameters
+ * from the ini file and returns them in a HSParams object
+ * 
+ * @return Template HSParams object with loaded parameters
+ */
 template<class T>
 const HSParams<T> Experiment<T>::createHSParamsTemplate()
 {
@@ -848,6 +962,9 @@ bool Experiment<T>::allocateThreadPool(size_t numThreads)
     return tPool != nullptr;
 }
 
+/**
+ * @brief Releases the memory allocated for the thread pool
+ */
 template<class T>
 void Experiment<T>::releaseThreadPool()
 {
