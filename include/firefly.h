@@ -235,7 +235,7 @@ void mfunc::Firefly<T>::move(FAParams<T>& p, T* solBuffer, size_t firefly_j, siz
     T oldFit = p.nextPop->getFitness(firefly_j);
 
     // Update firefly if new is better than old
-    if (newFit < oldFit);
+    if (newFit < oldFit)
     {
         p.nextPop->copyPopulation(solBuffer, firefly_j);
         p.nextPop->setFitness(firefly_j, newFit);
