@@ -4,23 +4,6 @@ Student: Andrew Dunn
 Instructor: Dr. Donald Davendra
 
 ---------------------------------
-Important note from student
----------------------------------
-
-I had a difficult time with this project. I ran into
-multiple roadblocks when implementing the two algorithms,
-especially the genetic algorithm which set me back a few days.
-I was getting wierd results that took me a long time to figure out
-what I was doing wrong, and I think my DE implementation is still
-not working 100% as it should.
-
-In order to leave enough time for the sizable report, I decided to 
-leave out the additional GA selection algorithms and multiple 
-crossover function to focus on a working code. I apologize for my failings, 
-but it is what it is. At the end of the day I had to make a call in order 
-to finish the project on time, and so this was my choice.
-
----------------------------------
 Project Description
 ---------------------------------
 
@@ -28,7 +11,8 @@ This project tests 18 different dimension scalable
 mathematical functions with a random population data
 set. The goal is to find a population that produces
 a fitness close to the optimal value using various
-search algorithms.
+search algorithms. The search algorithms used are
+particle swarm, firefly algorithm, and harmony search.
 
 ---------------------------------
 Project Requirements
@@ -97,13 +81,12 @@ For Ubuntu and MacOS:
 
 To run this project, a few shell scripts are provided that will
 run the release binary using different test parameter files included 
-in the [project]/source/params/ directory. To run genetic algorithm for
-50 iterations with a population size of 200 in 30 dimenstions, open a
-terminal and execute the following commands:
+in the [project]/source/params/ directory. To run particle swarm for
+example, open a terminal and execute the following commands:
 
 ```
 cd [Path-to-/source-dir]
-./unix-run-GA.sh
+./unix-run-pso.sh
 ```
 
 Where [Path-to-/source-dir] is the file system path to the [project]/source/ directory
@@ -112,12 +95,13 @@ Results files will be placed in the [project]/source/results directory.
 
 --------
 
-To run differential evolution for all 10 strategies with population sizes of 200 in 30 dimensions, open a terminal and 
+To run the firefly or harmony search algorithms, open a terminal and 
 execute the following commands:
 
 ```
 cd [Path-to-/source-dir]
-./unix-run-DE.sh
+./unix-run-fa.sh
+./unix-run-hs.sh
 ```
 Where [Path-to-/source-dir] is the file system path to the [project]/source/ directory
 within this project. You should see a message that says all tests were ran after they complete.
@@ -125,7 +109,7 @@ Results files will be placed in the [project]/source/results directory.
 
 --------
 
-To run both genetic algorithm and differential evolution with the parameters specified above,
+To run both all three search algorithms,
 open a terminal and execute the following command:
 
 ```
@@ -142,7 +126,7 @@ If you wish to run this project manually, within the terminal run the
 following command:
 
 ```
-./build/release/cs471_proj1.out [Input-parameter-file]
+./build/release/cs471-proj4.out [Input-parameter-file]
 ```
 
 Where [Input-parameter-file] is the path to the input parameter ini file.
@@ -151,23 +135,31 @@ which will run the search algorithms with different parameters. For example:
 
 ```
 cd [Path-to-/source-dir]
-./build/release/cs471_proj1.out ./params/GA_roulette.ini
+./build/release/cs471-proj4.out ./params/fa-1.ini
 ```
 
 Available files:
 
-./params/GA_roulette.ini
+Used for debugging:
+./params/debug_params.ini
 
-./params/DE_Strat1.ini
-./params/DE_Strat2.ini
-./params/DE_Strat3.ini
-./params/DE_Strat4.ini
-./params/DE_Strat5.ini
-./params/DE_Strat6.ini
-./params/DE_Strat7.ini
-./params/DE_Strat8.ini
-./params/DE_Strat9.ini
-./params/DE_Strat10.ini
+Firefly algorithm, four parameter strategies:
+./params/fa-1.ini
+./params/fa-2.ini
+./params/fa-3.ini
+./params/fa-4.ini
+
+Harmony search, four parameter strategies:
+./params/hs-1.ini
+./params/hs-2.ini
+./params/hs-3.ini
+./params/hs-4.ini
+
+Particle swarm, four parameter strategies
+./params/pso-1.ini
+./params/pso-2.ini
+./params/pso-3.ini
+./params/pso-4.ini
 
 ---------------------------------
 Optional Run Command Line Argument
@@ -178,7 +170,7 @@ argument that allows you to select a specific data type to be used in the experi
 To do this, open a terminal and execute the following commands:
 
 ```
-./build/release/cs471_proj1.out [Input-parameter-file] [Datatype-id]
+./build/release/cs471-proj4.out [Input-parameter-file] [Datatype-id]
 ```
 
 Where [Datatype-id] is an integer ranging from 0 to 2:
@@ -202,10 +194,12 @@ Input parameter file format
 ---------------------------------
 
 The input parameter file is a configuration file in the *.ini format.
-It contains two different sections, 'test' and 'function_range'.
+It contains two different main sections, 'test' and 'function_range'.
 
 The 'test' section contains various settings to control how the
-experiment is ran and which files are produced.
+experiment is ran and which files are produced. The 'function_range'
+section lets you specify the random number generator bounds for each 
+function's data population.
 
 --
 
@@ -224,59 +218,48 @@ to run the experiment. Note that you want to set this value to be equal or
 close to the number of CPU's/CPU cores available in your system.
 
 The 'algorithm' entry allows you to select which search algorithm to run.
-0 = Genetic Algorithm and 1 = Differential Evolution.
+0 = Particle swarm, 1 = Firefly algorithm, and 2 = Harmony search.
 
 The 'results_file' entry is the file path (without spaces) to the file you 
-wish to export the search algorithm fitness results to.
+wish to export the best fitness results to.
+
+The 'worst_fit_file' entry is the file path (without spaces) to the file you 
+wish to export the worst fitness results to.
 
 The 'exec_times_file' entry is the file path (without spaces) to the file you
 wish to export the search algorithm execution times to.
 
---
-
-The 'genetic_alg' section lets you specify parameters specific to the genetic algorithm:
-
-The 'generations' entry specifies the number of generations to run the algorithm for.
-
-The 'crossover_prob' entry specifies the crossover probability (0-1.0)
-
-The 'mutation_prob' entry specifies the mutation probability (0-1.0)
-
-The 'mutation_range' entry specifies the mutation range
-
-The 'mutation_precision' entry specifies the mutation precision
-
-The 'elitism_rate' entry specifies the elitisn rate (0-1.0)
+The 'func_calls_file' entry is the file path (without spaces) to the file you
+wish to export objective function call counts to.
 
 --
 
-The 'differential_evo' section lets you specify parameters specific to the differential evolution algorithm:
+The 'particle_swarm' section lets you specify parameters specific to the particle swarm algorithm:
 
-The 'generations' entry specifies the number of generations to run the algorithm for.
+The 'c1' entry specifies c1 random chance for particle swarm (0-1.0)
 
-The 'crossover_prob' entry specifies the crossover probability (0-1.0)
+The 'c2' entry specifies c2 random chance for particle swarm (0-1.0)
 
-The 'scalefactor_1' entry specifies the primary mutation scale factor
-
-The 'scalefactor_2' entry specifies the secondary (lambda) mutation scale factor
-
-The 'strategy' entry specifies the mutation and crossover strategy to be used. There are 10 different strategies that
-can be selected using an index 0-9. These strategies are:
-
-0 = Best1Exp
-1 = Rand1Exp
-2 = RandToBest1Exp
-3 = Best2Exp
-4 = Rand2Exp
-5 = Best1Bin
-6 = Rand1Bin
-7 = RandToBest1Bin
-8 = Best2Bin
-9 = Rand2Bin
+The 'k' entry specifies the velocity dampening factor for particle swarm
 
 --
 
-The 'function_range' section lets you specify the random number
-generator bounds for each function's data population.
+The 'firefly' section lets you specify parameters specific to the firefly algorithm:
+
+The 'alpha' entry specifies the alpha parameter for the firefly algorithm
+
+The 'betamin' entry specifies the betamin parameter for the firefly algorithm
+
+The 'gamma' entry specifies the gamma parameter for the firefly algorithm
+
+--
+
+The 'harmony_search' section lets you specify parameters specific to the harmony search algorithm:
+
+The 'hmcr' entry specifies the Harmony Memory Considering Rate parameter for the harmony search algorithm
+
+The 'par' entry specifies the Pitch Adjusting Rate parameter for the harmony search algorithm
+
+The 'bw' entry specifies the Bandwidth parameter for the harmony search algorithm
 
 ---------------------------------
